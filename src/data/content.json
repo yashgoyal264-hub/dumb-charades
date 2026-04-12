@@ -1,0 +1,215 @@
+{
+  "movies": {
+    "bollywood": {
+      "easy": [
+        "Sholay", "DDLJ", "3 Idiots", "Lagaan", "Dangal", "PK", "Dhoom", "Krrish",
+        "Ghajini", "Dil Chahta Hai", "Zindagi Na Milegi Dobara", "Rang De Basanti",
+        "Munna Bhai MBBS", "Hera Pheri", "Chak De India", "Bajrangi Bhaijaan",
+        "Stree", "Pathaan", "Jawan", "Animal", "KGF", "Baahubali", "RRR", "Pushpa",
+        "Gadar", "Border", "Kabir Singh", "Yeh Jawaani Hai Deewani", "Golmaal",
+        "Welcome", "Singham", "Dabangg", "Kabhi Khushi Kabhie Gham", "Kuch Kuch Hota Hai",
+        "Om Shanti Om", "Dilwale", "Chennai Express", "Happy New Year", "Don",
+        "Ra One", "Ek Tha Tiger", "Tiger Zinda Hai", "War", "Jab We Met",
+        "Love Aaj Kal", "Cocktail", "Tamasha", "Barfi", "Rockstar",
+        "Dil Dhadakne Do", "Taare Zameen Par", "My Name is Khan", "Veer Zaara",
+        "Devdas", "Black", "Mother India", "Mughal-E-Azam", "Guide",
+        "Andaz Apna Apna", "Maine Pyar Kiya", "Hum Aapke Hain Koun", "Baazigar",
+        "Darr", "Jo Jeeta Wohi Sikandar", "Khiladi", "Judwaa", "Coolie No 1",
+        "Koi Mil Gaya", "Kal Ho Na Ho", "Kabhi Alvida Naa Kehna", "Dostana",
+        "Student of the Year", "Wake Up Sid", "Ae Dil Hai Mushkil",
+        "Raazi", "Uri", "Article 15", "Toilet Ek Prem Katha", "Padman",
+        "Badhaai Ho", "Bala", "Good Newwz", "Shubh Mangal Savdhan",
+        "Luka Chuppi", "Tu Jhoothi Main Makkaar", "Rocky Aur Rani",
+        "Brahmastra", "Drishyam", "Kahaani", "A Wednesday", "Pink",
+        "Airlift", "Rustom", "Jolly LLB", "OMG Oh My God", "Bhootnath",
+        "Mard Ko Dard Nahi Hota", "Andhadhun", "Stree 2"
+      ],
+      "hard": [
+        "Tumbbad", "Ship of Theseus", "Guzaarish", "Haider", "Omkara", "Maqbool",
+        "Gangs of Wasseypur", "Dev D", "Masaan", "Court", "Newton", "Ugly",
+        "Raman Raghav 2.0", "A Death in the Gunj", "Trapped", "Bulbbul",
+        "Monica O My Darling", "AK vs AK", "Qala", "Gehraiyaan", "Sardar Udham",
+        "The Lunchbox", "Paan Singh Tomar", "Shahid", "Talvar", "NH10",
+        "Dum Laga Ke Haisha", "Aankhon Dekhi", "Titli", "Aligarh",
+        "Lootera", "Udaan", "Gulaal", "Oye Lucky Lucky Oye", "Bheja Fry",
+        "Khosla Ka Ghosla", "Tanu Weds Manu", "Queen", "Highway",
+        "Margarita with a Straw", "Fandry", "Sairat", "Manjhi The Mountain Man",
+        "Neerja", "Byomkesh Bakshi", "Kaul", "Paatal Lok Film",
+        "Kapoor and Sons", "Ishaqzaade", "Jaane Tu Ya Jaane Na"
+      ]
+    },
+    "hollywood": {
+      "easy": [
+        "Titanic", "Avatar", "Avengers Endgame", "Spider-Man", "Batman",
+        "Frozen", "Toy Story", "Harry Potter", "Star Wars", "Jurassic Park",
+        "The Lion King", "The Matrix", "Fast and Furious", "Mission Impossible",
+        "Home Alone", "Shrek", "Kung Fu Panda", "Lord of the Rings", "Inception",
+        "Interstellar", "John Wick", "Barbie", "Oppenheimer", "Top Gun",
+        "Forrest Gump", "Gladiator", "The Dark Knight", "Iron Man", "Thor",
+        "Black Panther", "Doctor Strange", "Captain America", "Wonder Woman",
+        "Aquaman", "Joker", "Deadpool", "Wolverine", "X-Men",
+        "Finding Nemo", "The Little Mermaid", "Beauty and the Beast", "Aladdin",
+        "The Incredibles", "Cars", "Wall-E", "Up", "Brave", "Monsters Inc",
+        "Coco", "Inside Out", "Moana", "Encanto", "Soul", "Ratatouille",
+        "Transformers", "Pirates of the Caribbean", "Indiana Jones", "Jurassic World",
+        "Guardians of the Galaxy", "Dune", "Everything Everywhere All at Once",
+        "Top Gun Maverick", "The Gray Man", "Red Notice", "Don't Look Up",
+        "Bird Box", "Extraction", "Army of the Dead", "Tenet",
+        "Free Guy", "The Suicide Squad", "Shang-Chi", "Eternals",
+        "No Way Home", "Doctor Strange Multiverse of Madness",
+        "Thor Love and Thunder", "Black Panther Wakanda Forever",
+        "Ant-Man and the Wasp Quantumania", "Guardians Vol 3",
+        "The Flash", "Aquaman Lost Kingdom", "Dune Part Two", "Civil War"
+      ],
+      "hard": [
+        "Memento", "Mulholland Drive", "Primer", "Coherence", "Arrival",
+        "Ex Machina", "Phantom Thread", "There Will Be Blood", "The Lighthouse",
+        "Midsommar", "Hereditary", "Parasite", "Eternal Sunshine of the Spotless Mind",
+        "Lost in Translation", "Whiplash", "Nightcrawler", "Blade Runner 2049",
+        "12 Angry Men", "Moonlight", "Lady Bird", "Three Billboards Outside Ebbing Missouri",
+        "The Shape of Water", "Portrait of a Lady on Fire", "Call Me by Your Name",
+        "Manchester by the Sea", "Room", "The Zone of Interest",
+        "Tar", "The Banshees of Inisherin", "All Quiet on the Western Front",
+        "Drive My Car", "Power of the Dog", "Nomadland", "Minari",
+        "First Reformed", "A Ghost Story", "Annihilation", "Under the Skin",
+        "Enemy", "Prisoners", "Zodiac", "Chinatown", "Rosemary's Baby",
+        "2001 A Space Odyssey", "Barry Lyndon", "Eyes Wide Shut",
+        "A Clockwork Orange", "Apocalypse Now", "Taxi Driver", "Raging Bull",
+        "The Departed", "Shutter Island", "Black Swan", "Her",
+        "The Revenant", "Birdman", "Gone Girl", "Gone Baby Gone"
+      ]
+    }
+  },
+  "songs": {
+    "bollywood": {
+      "easy": [
+        "Chaiyya Chaiyya", "Tum Hi Ho", "Jai Ho", "Kabira", "Desi Girl",
+        "Dhoom Machale", "Chammak Challo", "Beedi Jalaile", "Kajra Re", "Gerua",
+        "Nashe Si Chadh Gayi", "Badtameez Dil", "Kala Chashma", "Param Sundari",
+        "Kesariya", "Raataan Lambiyan", "Gallan Goodiyaan", "Besharam Rang",
+        "Srivalli", "Pushpa Pushpa", "Naatu Naatu", "Oo Antava",
+        "Aankh Marey", "Swag Se Swagat", "Mere Rashke Qamar",
+        "Suit Suit", "Tujhe Kitna Chahne Lage", "Bekhayali",
+        "Ae Dil Hai Mushkil Song", "Hawayein", "Bulleya",
+        "London Thumakda", "Kar Gayi Chull", "Ghungroo", "Malang",
+        "Illegal Weapon", "Rang De Tu Mohe", "Zinda", "Kar Har Maidaan Fateh",
+        "Jai Jai Shivshankar", "Ghungroo Toot Gaye", "Senorita",
+        "Tu Aashiqui Hai", "Manike", "Pasoori", "Softly",
+        "Ve Kamleya", "Tere Vaaste", "What Jhumka", "Jhoome Jo Pathaan",
+        "Besharam Rang", "Not Ramaiya Vastavaiya", "Naacho Naacho",
+        "Deva Deva", "Dance Ka Bhoot", "Kesariya"
+      ],
+      "hard": [
+        "Tu Kuja Man Kuja", "Ik Onkar", "Dil Se Re", "Lukka Chuppi",
+        "Chand Sifarish", "Mora Piya", "Piya Re", "Aaoge Jab Tum",
+        "Tere Liye", "Tum Se Hi", "Agar Tum Saath Ho", "Kabira Reprise",
+        "Channa Mereya", "Ae Watan", "Mera Joota Hai Japani",
+        "Pyaar Hua Ikraar Hua", "Ek Pyaar Ka Nagma Hai", "Lag Ja Gale",
+        "Ajeeb Daastaan Hai Yeh", "Pehla Nasha", "Tujhse Naraaz Nahi Zindagi",
+        "Do Dil Mil Rahe Hain", "Wada Raha", "Abhi Mujh Mein Kahin",
+        "Jab Tak Hai Jaan Title", "Heer", "Dil Ibadat", "Phir Mohabbat",
+        "Kun Faya Kun", "Arziyan", "Tu Bhi Meri", "Mast Kalandar",
+        "Saibo", "Padharo Mhare Des", "Iktara", "Dil Toh Baccha Hai Ji"
+      ]
+    },
+    "hollywood": {
+      "easy": [
+        "Shape of You", "Blinding Lights", "Uptown Funk", "Happy", "Roar",
+        "Bad Guy", "Old Town Road", "Levitating", "Stay", "Watermelon Sugar",
+        "Dynamite", "Butter", "Permission to Dance", "Drivers License",
+        "Good 4 U", "Montero", "Kiss Me More", "Leave the Door Open",
+        "Peaches", "Industry Baby", "Easy On Me", "We Don't Talk About Bruno",
+        "Heat Waves", "As It Was", "Anti-Hero", "About Damn Time",
+        "Break My Soul", "Running Up That Hill", "Unholy", "Flowers",
+        "Cruel Summer", "Shake It Off", "Blank Space", "Love Story",
+        "Bad Blood", "Cheap Thrills", "Closer", "Something Just Like This",
+        "Despacito", "Havana", "In My Feelings", "God's Plan",
+        "Sicko Mode", "Rockstar", "Sunflower", "Circles", "Memories",
+        "Levitating", "Stay", "Cold Heart", "Permission to Dance",
+        "Butter BTS", "Dynamite BTS", "Life Goes On", "My Universe",
+        "Save Your Tears", "Positions", "34 Plus 35", "POV",
+        "Montero Call Me By Your Name", "Industry Baby", "Fancy Like",
+        "You Right", "Leave the Door Open Silk Sonic"
+      ],
+      "hard": [
+        "Take Five", "Bohemian Rhapsody", "Hotel California", "Stairway to Heaven",
+        "Smells Like Teen Spirit", "Black", "Purple Rain", "Thriller",
+        "Billie Jean", "Beat It", "Sultans of Swing", "Comfortably Numb",
+        "Time", "Money", "Another Brick in the Wall", "Wish You Were Here",
+        "Space Oddity", "Heroes", "Life on Mars", "Starman",
+        "Let It Be", "Hey Jude", "Come Together", "Something",
+        "Yesterday", "Blackbird", "While My Guitar Gently Weeps",
+        "Scarborough Fair", "Sound of Silence", "Mrs Robinson",
+        "The Sound of Silence", "Blowin in the Wind", "Like a Rolling Stone",
+        "Mr Tambourine Man", "All Along the Watchtower", "Tangled Up in Blue",
+        "Riders on the Storm", "Light My Fire", "People Are Strange",
+        "Break On Through", "Maggie May", "Tiny Dancer", "Rocket Man",
+        "Crocodile Rock", "Piano Man", "Vienna", "Big Shot"
+      ]
+    }
+  },
+  "series": {
+    "indian": {
+      "easy": [
+        "Scam 1992", "Mirzapur", "Sacred Games", "Panchayat", "Kota Factory",
+        "TVF Pitchers", "Jamtara", "Delhi Crime", "Aspirants", "The Family Man",
+        "Aarya", "Breathe", "Little Things", "Permanent Roommates",
+        "Taarak Mehta Ka Ooltah Chashmah", "Crime Patrol", "CID",
+        "Savdhaan India", "Balika Vadhu", "Yeh Rishta Kya Kehlata Hai",
+        "Naagin", "Kumkum Bhagya", "Kundali Bhagya", "Anupamaa",
+        "Kaun Banega Crorepati", "Bigg Boss", "Roadies", "Splitsvilla",
+        "Kapil Sharma Show", "Indian Idol", "Dance India Dance",
+        "Nach Baliye", "Jhalak Dikhhla Jaa", "Rakhi Ka Swayamvar",
+        "Bade Achhe Lagte Hain", "Pyaar Ka Dard Hai", "Diya Aur Baati Hum",
+        "Pavitra Rishta", "Uttaran", "Mahi Way", "Remix",
+        "Hip Hip Hurray", "Jassi Jaissi Koi Nahin", "Kyunki Saas Bhi Kabhi Bahu Thi",
+        "Kahaani Ghar Ghar Kii", "Kasautii Zindagii Kay"
+      ],
+      "hard": [
+        "Bandish Bandits", "Criminal Justice", "Special Ops", "Hostages",
+        "Bhaukaal", "Typewriter", "She", "Breathe Into the Shadows",
+        "Paatal Lok", "Scam 2003", "Human", "Rocket Boys",
+        "A Simple Murder", "Undekhi", "Abhay", "Aranyak",
+        "Tabbar", "Raktanchal", "Inspector Avinash", "Tandav",
+        "The Forgotten Army", "City of Dreams", "Inside Edge",
+        "Ek Thi Begum", "Betaal", "Bard of Blood",
+        "Selection Day", "Leila", "Yeh Meri Family", "The Gone Game",
+        "Mentalhood", "Aashram", "Paurashpur", "Asur"
+      ]
+    },
+    "international": {
+      "easy": [
+        "Breaking Bad", "Game of Thrones", "Stranger Things", "Money Heist",
+        "Dark", "Squid Game", "Friends", "The Office", "Narcos", "Ozark",
+        "The Crown", "Black Mirror", "Sherlock", "House of Cards", "Suits",
+        "Brooklyn Nine-Nine", "The Witcher", "Bridgerton", "Emily in Paris",
+        "Lupin", "The Mandalorian", "WandaVision", "Loki", "The Boys",
+        "Euphoria", "Sex Education", "You", "Elite", "Outer Banks",
+        "Never Have I Ever", "Ginny and Georgia", "Shadow and Bone",
+        "Cobra Kai", "Wednesday", "The Last of Us", "House of the Dragon",
+        "Rings of Power", "Andor", "The Bear", "White Lotus",
+        "Ted Lasso", "Succession", "Abbott Elementary", "Severance",
+        "The Diplomat", "Daisy Jones and the Six", "The Watcher",
+        "Dahmer", "Monster", "Inventing Anna", "Maid", "Clickbait",
+        "Manifest", "Lost", "Prison Break", "24", "Dexter",
+        "The Walking Dead", "Fear the Walking Dead", "Yellowstone",
+        "Grey's Anatomy", "This Is Us", "Big Bang Theory",
+        "How I Met Your Mother", "Two and a Half Men", "Modern Family"
+      ],
+      "hard": [
+        "The Wire", "Mindhunter", "Peaky Blinders", "Fleabag",
+        "Barry", "Atlanta", "The Americans", "Rectify", "Deadwood",
+        "Carnivale", "The Sopranos", "Mad Men", "Band of Brothers",
+        "Generation Kill", "Rome", "Halt and Catch Fire",
+        "Mr Robot", "The Leftovers", "Station Eleven", "The Terror",
+        "Chernobyl", "Years and Years", "I May Destroy You",
+        "Pose", "Transparent", "Looking", "Kidding",
+        "Lodge 49", "Patriot", "Perpetual Grace LTD",
+        "Treme", "Show Me a Hero", "Mildred Pierce",
+        "The Knick", "Vinyl", "Boardwalk Empire",
+        "Rubicon", "Rubicon Series", "The Killing", "Top of the Lake",
+        "The Fall", "Happy Valley", "Broadchurch", "Unforgotten"
+      ]
+    }
+  }
+}
