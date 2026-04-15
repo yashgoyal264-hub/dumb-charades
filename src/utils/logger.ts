@@ -55,7 +55,7 @@ export function logRound(sessionId: string, state: GameState): void {
     movie: state.currentMovie,
     result: state.lastResult,
     guesser: state.lastGuesser,
-    split_guesser: state.lastSplitGuesser,
+    split_guesser: state.lastSplitGuessers.length > 0 ? state.lastSplitGuessers.join(', ') : null,
     actor_points: state.lastActorPoints,
     guesser_points: state.lastGuesserPoints,
     quick_guess: state.lastQuickGuessBonus,

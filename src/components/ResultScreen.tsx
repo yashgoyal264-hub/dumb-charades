@@ -8,8 +8,14 @@ interface Props {
 }
 
 export function ResultScreen({ state, dispatch }: Props) {
-  const { lastResult, lastGuesser, lastSplitGuesser, currentMovie, lastActorPoints,
+  const { lastResult, lastGuesser, lastSplitGuessers, currentMovie, lastActorPoints,
     lastGuesserPoints, lastQuickGuessBonus, bonusRoundAccepted, bonusRoundValue, suddenDeathWinner } = state;
+
+  // Format a list of names: ["A","B","C"] → "A, B & C"
+  const formatNames = (names: string[]) => {
+    if (names.length <= 1) return names[0] ?? '';
+    return names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1];
+  };
   const actor = state.players[state.currentActorIndex];
 
   const { playBuzzer } = useSound();
@@ -108,7 +114,7 @@ export function ResultScreen({ state, dispatch }: Props) {
     split: {
       emoji: '⚡',
       title: `Split guess!`,
-      subtitle: `${lastGuesser} & ${lastSplitGuesser} +${lastGuesserPoints} each  ·  ${actor} +${lastActorPoints}`,
+      subtitle: `${formatNames(lastSplitGuessers)} +${lastGuesserPoints} each  ·  ${actor} +${lastActorPoints}`,
       color: '#fbbf24',
       bg: 'rgba(251,191,36,0.1)',
       borderColor: 'rgba(251,191,36,0.25)',

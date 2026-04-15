@@ -111,7 +111,7 @@ export const initialState: GameState = {
   history: [],
   lastResult: null,
   lastGuesser: null,
-  lastSplitGuesser: null,
+  lastSplitGuessers: [],
   lastActorPoints: 0,
   lastGuesserPoints: 0,
   lastQuickGuessBonus: false,
@@ -171,7 +171,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         history: [],
         lastResult: null,
         lastGuesser: null,
-        lastSplitGuesser: null,
+        lastSplitGuessers: [],
         lastActorPoints: 0,
         lastQuickGuessBonus: false,
         usedMovies: new Set([movie]),
@@ -253,7 +253,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         scores: newScores,
         lastResult: 'guessed',
         lastGuesser: action.guesser,
-        lastSplitGuesser: null,
+        lastSplitGuessers: [],
         lastActorPoints: actorPts,
         lastGuesserPoints: guesserPts,
         lastQuickGuessBonus: isQuickGuess,
@@ -276,16 +276,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const actor = state.players[state.currentActorIndex];
       const newScores = { ...state.scores };
 
-      const duration = DURATIONS[state.mode] * 1000;
+      const duration = state.duration * 1000;
       const elapsed = action.timestamp - (state.actingStartTime ?? action.timestamp);
       const isQuickGuess = elapsed < duration * 0.3;
-      const quickBonus = isQuickGuess ? 1 : 0;
+      // Split quick bonus is +0.5 per guesser (not +1)
+      const splitQuickBonus = isQuickGuess ? 0.5 : 0;
 
       const baseActorPts = state.bonusRoundAccepted ? state.bonusRoundValue : 1;
-      const actorPts = baseActorPts + quickBonus;
+      const actorPts = baseActorPts + (isQuickGuess ? 1 : 0);
+      const guesserPts = 0.5 + splitQuickBonus;
 
-      newScores[action.guesser1] = (newScores[action.guesser1] || 0) + 0.5 + quickBonus;
-      newScores[action.guesser2] = (newScores[action.guesser2] || 0) + 0.5 + quickBonus;
+      action.guessers.forEach(g => {
+        newScores[g] = (newScores[g] || 0) + guesserPts;
+      });
       newScores[actor] = (newScores[actor] || 0) + actorPts;
 
       const suddenDeathWinner = checkSuddenDeath(newScores, state.houseRules);
@@ -295,19 +298,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         screen: 'result',
         scores: newScores,
         lastResult: 'split',
-        lastGuesser: action.guesser1,
-        lastSplitGuesser: action.guesser2,
+        lastGuesser: action.guessers[0],
+        lastSplitGuessers: action.guessers,
         lastActorPoints: actorPts,
-        lastGuesserPoints: 0.5 + quickBonus,
+        lastGuesserPoints: guesserPts,
         lastQuickGuessBonus: isQuickGuess,
         suddenDeathWinner,
         history: [...state.history, {
           movie: state.currentMovie,
           actor,
-          guessedBy: action.guesser1,
+          guessedBy: action.guessers[0],
           wasFoul: false,
           wasSplit: true,
-          splitWith: action.guesser2,
+          splitWith: action.guessers.join(' & '),
           bonusRound: state.bonusRoundAccepted,
           bonusValue: state.bonusRoundAccepted ? state.bonusRoundValue : undefined,
         }],
@@ -334,7 +337,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         scores: newScores,
         lastResult: 'timeout',
         lastGuesser: null,
-        lastSplitGuesser: null,
+        lastSplitGuessers: [],
         lastActorPoints: state.bonusRoundAccepted ? -state.bonusRoundValue : (state.houseRules.timeoutPenalty ? -1 : 0),
         lastQuickGuessBonus: false,
         suddenDeathWinner: null,
@@ -359,7 +362,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         screen: 'result',
         lastResult: 'foul',
         lastGuesser: null,
-        lastSplitGuesser: null,
+        lastSplitGuessers: [],
         lastActorPoints: 0,
         lastQuickGuessBonus: false,
         suddenDeathWinner: null,
@@ -406,7 +409,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         history: historyWithOvertime,
         lastResult: null,
         lastGuesser: null,
-        lastSplitGuesser: null,
+        lastSplitGuessers: [],
         lastActorPoints: 0,
         lastQuickGuessBonus: false,
         usedMovies: new Set([...state.usedMovies, movie]),

@@ -42,7 +42,7 @@ export interface GameState {
   history: HistoryEntry[];
   lastResult: ResultType;
   lastGuesser: string | null;
-  lastSplitGuesser: string | null;
+  lastSplitGuessers: string[];
   lastActorPoints: number;
   lastGuesserPoints: number;
   lastQuickGuessBonus: boolean;
@@ -74,7 +74,7 @@ export type GameAction =
   | { type: 'ACCEPT_BONUS' }
   | { type: 'DECLINE_BONUS' }
   | { type: 'CORRECT_GUESS'; guesser: string; timestamp: number }
-  | { type: 'SPLIT_GUESS'; guesser1: string; guesser2: string; timestamp: number }
+  | { type: 'SPLIT_GUESS'; guessers: string[]; timestamp: number }
   | { type: 'TIMEOUT' }
   | { type: 'FOUL' }
   | { type: 'NEXT_ROUND'; overtimeDuration?: number }

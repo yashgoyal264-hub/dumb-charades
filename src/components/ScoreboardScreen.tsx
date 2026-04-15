@@ -166,7 +166,7 @@ export function ScoreboardScreen({ state, dispatch }: Props) {
                 <div className="text-gray-500 text-xs">
                   Actor: {entry.actor}
                   {entry.guessedBy && !entry.wasFoul && (
-                    <> · {entry.wasSplit ? `Split: ${entry.guessedBy} & ${entry.splitWith}` : `Guessed by: ${entry.guessedBy}`}</>
+                    <> · {entry.wasSplit ? `Split: ${entry.splitWith}` : `Guessed by: ${entry.guessedBy}`}</>
                   )}
                 </div>
               </div>

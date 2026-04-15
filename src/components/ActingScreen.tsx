@@ -14,8 +14,8 @@ export function ActingScreen({ state, dispatch }: Props) {
   const actor    = state.players[state.currentActorIndex];
   const guessers = state.players.filter((_, i) => i !== state.currentActorIndex);
 
-  const [splitMode,  setSplitMode]  = useState(false);
-  const [splitFirst, setSplitFirst] = useState<string | null>(null);
+  const [splitMode, setSplitMode] = useState(false);
+  const [splitList, setSplitList] = useState<string[]>([]);
 
   const { playTick } = useSound();
 
@@ -38,15 +38,19 @@ export function ActingScreen({ state, dispatch }: Props) {
   }, [timeLeft, isRunning, playTick]);
 
   const handleGuess = (guesser: string) => {
-    const ts = Date.now();
     if (splitMode) {
-      if (!splitFirst) {
-        setSplitFirst(guesser);
-      } else if (splitFirst !== guesser) {
-        dispatch({ type: 'SPLIT_GUESS', guesser1: splitFirst, guesser2: guesser, timestamp: ts });
-      }
+      // Toggle guesser in/out of split list
+      setSplitList(prev =>
+        prev.includes(guesser) ? prev.filter(g => g !== guesser) : [...prev, guesser]
+      );
     } else {
-      dispatch({ type: 'CORRECT_GUESS', guesser, timestamp: ts });
+      dispatch({ type: 'CORRECT_GUESS', guesser, timestamp: Date.now() });
+    }
+  };
+
+  const confirmSplit = () => {
+    if (splitList.length >= 2) {
+      dispatch({ type: 'SPLIT_GUESS', guessers: splitList, timestamp: Date.now() });
     }
   };
 
@@ -91,41 +95,60 @@ export function ActingScreen({ state, dispatch }: Props) {
       {/* Instruction */}
       <p className="text-gray-500 text-sm mb-4 text-center">
         {splitMode
-          ? splitFirst ? 'Tap the second guesser' : 'Tap who guessed first'
+          ? splitList.length === 0
+            ? 'Tap everyone who guessed'
+            : `${splitList.length} selected — tap more or confirm`
           : 'Tap the player who guesses correctly'}
       </p>
 
       {/* Guesser buttons */}
       <div className="w-full flex flex-col gap-3 mb-auto">
-        {guessers.map(guesser => (
-          <button key={guesser} onClick={() => handleGuess(guesser)}
-            className={`w-full py-5 rounded-2xl text-xl font-black text-white transition-all active:scale-95 cursor-pointer ${
-              splitFirst === guesser ? 'ring-2 ring-yellow-400' : ''
-            }`}
-            style={{
-              background: splitFirst === guesser
-                ? 'rgba(251,191,36,0.15)'
-                : 'linear-gradient(135deg, rgba(16,185,129,0.18), rgba(16,185,129,0.08))',
-              border: splitFirst === guesser
-                ? '2px solid #fbbf24'
-                : '2px solid rgba(16,185,129,0.25)',
-              fontFamily: 'Outfit, system-ui, sans-serif',
-            }}>
-            {guesser}
-          </button>
-        ))}
+        {guessers.map(guesser => {
+          const inSplit = splitList.includes(guesser);
+          return (
+            <button key={guesser} onClick={() => handleGuess(guesser)}
+              className={`w-full py-5 rounded-2xl text-xl font-black text-white transition-all active:scale-95 cursor-pointer ${
+                inSplit ? 'ring-2 ring-yellow-400' : ''
+              }`}
+              style={{
+                background: inSplit
+                  ? 'rgba(251,191,36,0.15)'
+                  : 'linear-gradient(135deg, rgba(16,185,129,0.18), rgba(16,185,129,0.08))',
+                border: inSplit
+                  ? '2px solid #fbbf24'
+                  : '2px solid rgba(16,185,129,0.25)',
+                fontFamily: 'Outfit, system-ui, sans-serif',
+              }}>
+              {guesser}
+            </button>
+          );
+        })}
       </div>
 
+      {/* Confirm split — appears once 2+ are selected */}
+      {splitMode && splitList.length >= 2 && (
+        <button
+          onClick={confirmSplit}
+          className="w-full mt-4 py-4 rounded-2xl text-base font-black text-white transition-all active:scale-95 cursor-pointer"
+          style={{
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.3), rgba(251,191,36,0.15))',
+            border: '2px solid rgba(251,191,36,0.5)',
+            fontFamily: 'Outfit, system-ui, sans-serif',
+          }}>
+          Confirm Split — {splitList.join(' & ')}
+        </button>
+      )}
+
       {/* Bottom controls */}
-      <div className="w-full mt-6 flex gap-3">
+      <div className="w-full mt-4 flex gap-3">
         {guessers.length >= 2 && (
           <button
-            onClick={() => { setSplitMode(!splitMode); setSplitFirst(null); }}
+            onClick={() => { setSplitMode(!splitMode); setSplitList([]); }}
             className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 cursor-pointer border ${
               splitMode ? 'border-yellow-500 text-yellow-400' : 'border-[#2a2a3e] text-gray-500'
             }`}
             style={{ background: splitMode ? 'rgba(251,191,36,0.08)' : 'transparent' }}>
-            Split
+            {splitMode ? 'Cancel Split' : 'Split'}
           </button>
         )}
         <button
