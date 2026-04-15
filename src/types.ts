@@ -1,7 +1,13 @@
-export type Screen = 'home' | 'setup' | 'pass' | 'bonus' | 'reveal' | 'acting' | 'result' | 'scoreboard';
+export type Screen = 'home' | 'setup' | 'team_setup' | 'pass' | 'actor_select' | 'bonus' | 'reveal' | 'acting' | 'result' | 'scoreboard';
 export type Mode = 'rapid' | 'classic' | 'difficult';
 export type Category = 'movies' | 'songs' | 'series';
 export type ResultType = 'guessed' | 'timeout' | 'foul' | 'split' | null;
+export type ActingMode = 'random' | 'team_choice';
+
+export interface Team {
+  name: string;
+  members: string[];
+}
 
 export interface HouseRules {
   noSkip: boolean;
@@ -58,6 +64,14 @@ export interface GameState {
   actingStartTime: number | null;
   // Logging
   sessionId: string | null;
+  // Team mode
+  isTeamMode: boolean;
+  teams: Team[];
+  actingMode: ActingMode;
+  currentTeamIndex: number;
+  teamActorCursors: Record<string, number>;
+  teamScores: Record<string, number>;
+  individualActorScores: Record<string, number>;
 }
 
 export type GameAction =
@@ -79,4 +93,8 @@ export type GameAction =
   | { type: 'FOUL' }
   | { type: 'NEXT_ROUND'; overtimeDuration?: number }
   | { type: 'SET_SESSION_ID'; sessionId: string }
+  | { type: 'SET_TEAM_MODE'; isTeamMode: boolean }
+  | { type: 'SET_ACTING_MODE'; mode: ActingMode }
+  | { type: 'SELECT_ACTOR'; actor: string }
+  | { type: 'START_TEAM_GAME'; teams: Team[] }
   | { type: 'RESET_GAME' };

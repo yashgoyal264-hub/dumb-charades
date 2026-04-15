@@ -1,4 +1,4 @@
-import type { GameState, GameAction, Mode, Category, HouseRules } from './types';
+import type { GameState, GameAction, Mode, Category, HouseRules, Team } from './types';
 import contentData from './data/content.json';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -62,14 +62,24 @@ function getNextMovie(state: GameState): { movie: string; queue: string[]; queue
 }
 
 function checkBonusRound(state: GameState, actorIndex: number): { offer: boolean; value: number } {
-  const players = state.players;
-  if (players.length < 2) return { offer: false, value: 0 };
+  const actor = state.players[actorIndex];
 
-  const actor = players[actorIndex];
-  const scores = state.scores;
-  const total = Object.values(scores).reduce((a, b) => a + b, 0);
-  const avg = total / players.length;
-  const actorScore = scores[actor] || 0;
+  let actorScore: number;
+  let avg: number;
+
+  if (state.isTeamMode) {
+    // Hidden individual actor scores — teams never see this logic
+    const scores = state.individualActorScores;
+    const vals = Object.values(scores);
+    if (vals.length < 2) return { offer: false, value: 0 };
+    avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    actorScore = scores[actor] || 0;
+  } else {
+    const players = state.players;
+    if (players.length < 2) return { offer: false, value: 0 };
+    avg = Object.values(state.scores).reduce((a, b) => a + b, 0) / players.length;
+    actorScore = state.scores[actor] || 0;
+  }
 
   if (actorScore >= avg) return { offer: false, value: 0 };
   if (Math.random() > BONUS_TRIGGER_CHANCE) return { offer: false, value: 0 };
@@ -122,6 +132,13 @@ export const initialState: GameState = {
   suddenDeathWinner: null,
   actingStartTime: null,
   sessionId: null,
+  isTeamMode: false,
+  teams: [],
+  actingMode: 'random',
+  currentTeamIndex: 0,
+  teamActorCursors: {},
+  teamScores: {},
+  individualActorScores: {},
 };
 
 // ─── Reducer ─────────────────────────────────────────────────────────────────
@@ -229,44 +246,46 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'CORRECT_GUESS': {
       const actor = state.players[state.currentActorIndex];
-      const newScores = { ...state.scores };
 
-      // Quick guess check (< 30% of total duration elapsed)
-      const duration = state.duration * 1000;
       const elapsed = action.timestamp - (state.actingStartTime ?? action.timestamp);
-      const isQuickGuess = elapsed < duration * 0.3;
+      const isQuickGuess = elapsed < state.duration * 1000 * 0.3;
       const quickBonus = isQuickGuess ? 1 : 0;
-
-      // Actor points: bonus round value OR base 1, plus quick bonus
       const baseActorPts = state.bonusRoundAccepted ? state.bonusRoundValue : 1;
       const actorPts = baseActorPts + quickBonus;
-      const guesserPts = 1 + quickBonus;
 
+      const historyEntry = {
+        movie: state.currentMovie, actor,
+        guessedBy: action.guesser, wasFoul: false, wasSplit: false,
+        bonusRound: state.bonusRoundAccepted,
+        bonusValue: state.bonusRoundAccepted ? state.bonusRoundValue : undefined,
+      };
+
+      if (state.isTeamMode) {
+        const teamName = state.teams[state.currentTeamIndex].name;
+        const newTeamScores = { ...state.teamScores, [teamName]: (state.teamScores[teamName] || 0) + actorPts };
+        const newIndividual = { ...state.individualActorScores, [actor]: (state.individualActorScores[actor] || 0) + actorPts };
+        return {
+          ...state, screen: 'result',
+          teamScores: newTeamScores, individualActorScores: newIndividual,
+          lastResult: 'guessed', lastGuesser: action.guesser, lastSplitGuessers: [],
+          lastActorPoints: actorPts, lastGuesserPoints: 0,
+          lastQuickGuessBonus: isQuickGuess,
+          suddenDeathWinner: checkSuddenDeath(newTeamScores, state.houseRules),
+          history: [...state.history, historyEntry],
+        };
+      }
+
+      const guesserPts = 1 + quickBonus;
+      const newScores = { ...state.scores };
       newScores[actor] = (newScores[actor] || 0) + actorPts;
       newScores[action.guesser] = (newScores[action.guesser] || 0) + guesserPts;
-
-      const suddenDeathWinner = checkSuddenDeath(newScores, state.houseRules);
-
       return {
-        ...state,
-        screen: 'result',
-        scores: newScores,
-        lastResult: 'guessed',
-        lastGuesser: action.guesser,
-        lastSplitGuessers: [],
-        lastActorPoints: actorPts,
-        lastGuesserPoints: guesserPts,
+        ...state, screen: 'result', scores: newScores,
+        lastResult: 'guessed', lastGuesser: action.guesser, lastSplitGuessers: [],
+        lastActorPoints: actorPts, lastGuesserPoints: guesserPts,
         lastQuickGuessBonus: isQuickGuess,
-        suddenDeathWinner,
-        history: [...state.history, {
-          movie: state.currentMovie,
-          actor,
-          guessedBy: action.guesser,
-          wasFoul: false,
-          wasSplit: false,
-          bonusRound: state.bonusRoundAccepted,
-          bonusValue: state.bonusRoundAccepted ? state.bonusRoundValue : undefined,
-        }],
+        suddenDeathWinner: checkSuddenDeath(newScores, state.houseRules),
+        history: [...state.history, historyEntry],
       };
     }
 
@@ -321,35 +340,36 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'TIMEOUT': {
       const actor = state.players[state.currentActorIndex];
-      const newScores = { ...state.scores };
+      const penalty = state.bonusRoundAccepted
+        ? -state.bonusRoundValue
+        : state.houseRules.timeoutPenalty ? -1 : 0;
 
-      if (state.bonusRoundAccepted) {
-        // Accepted bonus + failed = lose bonus points
-        newScores[actor] = (newScores[actor] || 0) - state.bonusRoundValue;
-      } else if (state.houseRules.timeoutPenalty) {
-        // House rule: -1 for actor on timeout
-        newScores[actor] = (newScores[actor] || 0) - 1;
+      const historyEntry = {
+        movie: state.currentMovie, actor, guessedBy: null, wasFoul: false, wasSplit: false,
+        bonusRound: state.bonusRoundAccepted,
+        bonusValue: state.bonusRoundAccepted ? state.bonusRoundValue : undefined,
+      };
+
+      if (state.isTeamMode) {
+        const teamName = state.teams[state.currentTeamIndex].name;
+        const newTeamScores = { ...state.teamScores, [teamName]: (state.teamScores[teamName] || 0) + penalty };
+        const newIndividual = { ...state.individualActorScores, [actor]: (state.individualActorScores[actor] || 0) + penalty };
+        return {
+          ...state, screen: 'result',
+          teamScores: newTeamScores, individualActorScores: newIndividual,
+          lastResult: 'timeout', lastGuesser: null, lastSplitGuessers: [],
+          lastActorPoints: penalty, lastQuickGuessBonus: false, suddenDeathWinner: null,
+          history: [...state.history, historyEntry],
+        };
       }
 
+      const newScores = { ...state.scores };
+      newScores[actor] = (newScores[actor] || 0) + penalty;
       return {
-        ...state,
-        screen: 'result',
-        scores: newScores,
-        lastResult: 'timeout',
-        lastGuesser: null,
-        lastSplitGuessers: [],
-        lastActorPoints: state.bonusRoundAccepted ? -state.bonusRoundValue : (state.houseRules.timeoutPenalty ? -1 : 0),
-        lastQuickGuessBonus: false,
-        suddenDeathWinner: null,
-        history: [...state.history, {
-          movie: state.currentMovie,
-          actor,
-          guessedBy: null,
-          wasFoul: false,
-          wasSplit: false,
-          bonusRound: state.bonusRoundAccepted,
-          bonusValue: state.bonusRoundAccepted ? state.bonusRoundValue : undefined,
-        }],
+        ...state, screen: 'result', scores: newScores,
+        lastResult: 'timeout', lastGuesser: null, lastSplitGuessers: [],
+        lastActorPoints: penalty, lastQuickGuessBonus: false, suddenDeathWinner: null,
+        history: [...state.history, historyEntry],
       };
     }
 
@@ -379,46 +399,52 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     // ── Next round ─────────────────────────────────────────────────────────
 
     case 'NEXT_ROUND': {
-      // If sudden death winner exists, go to scoreboard
-      if (state.suddenDeathWinner) {
-        return { ...state, screen: 'scoreboard' };
-      }
+      if (state.suddenDeathWinner) return { ...state, screen: 'scoreboard' };
 
-      // Stamp overtime duration on the last history entry if this was a timeout round
       const historyWithOvertime = action.overtimeDuration !== undefined && state.history.length > 0
         ? state.history.map((entry, i) =>
-            i === state.history.length - 1
-              ? { ...entry, overtimeDuration: action.overtimeDuration }
-              : entry
+            i === state.history.length - 1 ? { ...entry, overtimeDuration: action.overtimeDuration } : entry
           )
         : state.history;
 
-      const nextActorIndex = (state.currentActorIndex + 1) % state.players.length;
       const { movie, queue, queueIndex, isRecycled } = getNextMovie({ ...state });
-      const bonusCheck = checkBonusRound({ ...state, round: state.round + 1 }, nextActorIndex);
-
-      return {
-        ...state,
-        screen: 'pass',
-        currentActorIndex: nextActorIndex,
-        currentMovie: movie,
-        movieQueue: queue,
-        movieQueueIndex: queueIndex,
+      const roundBase = {
+        currentMovie: movie, movieQueue: queue, movieQueueIndex: queueIndex,
         round: state.round + 1,
         skipsRemaining: state.houseRules.noSkip ? 0 : SKIP_COUNT,
         history: historyWithOvertime,
-        lastResult: null,
-        lastGuesser: null,
-        lastSplitGuessers: [],
-        lastActorPoints: 0,
-        lastQuickGuessBonus: false,
+        lastResult: null as null, lastGuesser: null, lastSplitGuessers: [] as string[],
+        lastActorPoints: 0, lastQuickGuessBonus: false,
         usedMovies: new Set([...state.usedMovies, movie]),
         isRecycledMovie: isRecycled,
+        bonusRoundAccepted: false, bonusRoundValue: 0,
+        suddenDeathWinner: null, actingStartTime: null,
+      };
+
+      if (state.isTeamMode) {
+        const nextTeamIndex = (state.currentTeamIndex + 1) % state.teams.length;
+        const nextTeam = state.teams[nextTeamIndex];
+
+        if (state.actingMode === 'team_choice') {
+          return { ...state, ...roundBase, screen: 'pass', currentTeamIndex: nextTeamIndex, pendingBonusRound: null };
+        }
+        // random: use cursor-based rotation
+        const cursor = state.teamActorCursors[nextTeam.name] ?? 0;
+        const nextActorName = nextTeam.members[cursor % nextTeam.members.length];
+        const nextActorIndex = state.players.indexOf(nextActorName);
+        const nextCursors = { ...state.teamActorCursors, [nextTeam.name]: cursor + 1 };
+        const nextState = { ...state, ...roundBase, currentTeamIndex: nextTeamIndex, currentActorIndex: nextActorIndex, teamActorCursors: nextCursors };
+        const bonusCheck = checkBonusRound(nextState, nextActorIndex);
+        return { ...nextState, screen: 'pass', pendingBonusRound: bonusCheck.offer ? { value: bonusCheck.value } : null };
+      }
+
+      // Individual mode
+      const nextActorIndex = (state.currentActorIndex + 1) % state.players.length;
+      const bonusCheck = checkBonusRound({ ...state, ...roundBase }, nextActorIndex);
+      return {
+        ...state, ...roundBase, screen: 'pass',
+        currentActorIndex: nextActorIndex,
         pendingBonusRound: bonusCheck.offer ? { value: bonusCheck.value } : null,
-        bonusRoundAccepted: false,
-        bonusRoundValue: 0,
-        suddenDeathWinner: null,
-        actingStartTime: null,
       };
     }
 
@@ -426,6 +452,81 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_SESSION_ID':
       return { ...state, sessionId: action.sessionId };
+
+    case 'SET_TEAM_MODE':
+      return { ...state, isTeamMode: action.isTeamMode };
+
+    case 'SET_ACTING_MODE':
+      return { ...state, actingMode: action.mode };
+
+    // ── Team game start ────────────────────────────────────────────────────
+    case 'START_TEAM_GAME': {
+      const teams: Team[] = action.teams;
+      const queue = buildContentQueue(state.categories, state.languages, state.mode);
+      const teamScores: Record<string, number> = {};
+      const individualActorScores: Record<string, number> = {};
+      const teamActorCursors: Record<string, number> = {};
+      teams.forEach(t => {
+        teamScores[t.name] = 0;
+        teamActorCursors[t.name] = 0;
+        t.members.forEach(m => { individualActorScores[m] = 0; });
+      });
+
+      const { movie, queueIndex, isRecycled } = getNextMovie({ ...state, movieQueue: queue, movieQueueIndex: 0 });
+      const firstTeam = teams[0];
+
+      let currentActorIndex = 0;
+      let cursors = { ...teamActorCursors };
+      if (state.actingMode === 'random') {
+        currentActorIndex = state.players.indexOf(firstTeam.members[0]);
+        cursors[firstTeam.name] = 1;
+      }
+
+      return {
+        ...state,
+        screen: 'pass',
+        teams,
+        teamScores,
+        individualActorScores,
+        teamActorCursors: cursors,
+        currentTeamIndex: 0,
+        currentActorIndex,
+        movieQueue: queue,
+        movieQueueIndex: queueIndex,
+        currentMovie: movie,
+        round: 1,
+        skipsRemaining: state.houseRules.noSkip ? 0 : SKIP_COUNT,
+        scores: Object.fromEntries(state.players.map(p => [p, 0])),
+        history: [],
+        lastResult: null,
+        lastGuesser: null,
+        lastSplitGuessers: [],
+        lastActorPoints: 0,
+        lastQuickGuessBonus: false,
+        usedMovies: new Set([movie]),
+        isRecycledMovie: isRecycled,
+        pendingBonusRound: null,
+        bonusRoundAccepted: false,
+        bonusRoundValue: 0,
+        suddenDeathWinner: null,
+        actingStartTime: null,
+        sessionId: null,
+      };
+    }
+
+    // ── Actor selection (team_choice mode) ─────────────────────────────────
+    case 'SELECT_ACTOR': {
+      const actorIndex = state.players.indexOf(action.actor);
+      const newState = { ...state, currentActorIndex: actorIndex };
+      const bonusCheck = checkBonusRound(newState, actorIndex);
+      return {
+        ...newState,
+        screen: bonusCheck.offer ? 'bonus' : 'reveal',
+        pendingBonusRound: bonusCheck.offer ? { value: bonusCheck.value } : null,
+        bonusRoundAccepted: false,
+        bonusRoundValue: 0,
+      };
+    }
 
     case 'RESET_GAME':
       return { ...initialState };

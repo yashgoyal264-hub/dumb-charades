@@ -14,8 +14,14 @@ export function ScoreboardScreen({ state, dispatch }: Props) {
   const [showHistory, setShowHistory] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
 
-  const sorted = [...state.players].sort((a, b) => (state.scores[b] || 0) - (state.scores[a] || 0));
-  const topScore = state.scores[sorted[0]] || 0;
+  const isTeam = state.isTeamMode;
+  // In team mode rank teams; in individual mode rank players
+  const entries: { name: string; score: number }[] = isTeam
+    ? state.teams.map(t => ({ name: t.name, score: state.teamScores[t.name] || 0 }))
+        .sort((a, b) => b.score - a.score)
+    : [...state.players].sort((a, b) => (state.scores[b] || 0) - (state.scores[a] || 0))
+        .map(p => ({ name: p, score: state.scores[p] || 0 }));
+  const topScore = entries[0]?.score || 0;
 
   const rankEmoji = (i: number) => ['🥇', '🥈', '🥉'][i] || `${i + 1}.`;
 
@@ -47,8 +53,8 @@ export function ScoreboardScreen({ state, dispatch }: Props) {
 
       {/* Scores */}
       <div className="flex flex-col gap-2 mb-8">
-        {sorted.map((player, i) => {
-          const score = state.scores[player] || 0;
+        {entries.map((entry, i) => {
+          const { name: player, score } = entry;
           const isTop = score === topScore && topScore > 0;
           const pct = topScore > 0 ? (score / topScore) * 100 : 0;
 

@@ -5,7 +5,9 @@ import { createSession, logRound, closeSession } from './utils/logger';
 import type { GameState, GameAction } from './types';
 import { HomeScreen } from './components/HomeScreen';
 import { SetupScreen } from './components/SetupScreen';
+import { TeamSetupScreen } from './components/TeamSetupScreen';
 import { PassPhoneScreen } from './components/PassPhoneScreen';
+import { ActorSelectionScreen } from './components/ActorSelectionScreen';
 import { BonusRoundScreen } from './components/BonusRoundScreen';
 import { RevealScreen } from './components/RevealScreen';
 import { ActingScreen } from './components/ActingScreen';
@@ -16,7 +18,7 @@ function loadInitialState(): GameState {
   const saved = loadState();
   if (!saved) return initialState;
   // Redirect mid-round transient screens back to pass so the timer restarts cleanly
-  const screen = (saved.screen === 'acting' || saved.screen === 'bonus')
+  const screen = (['acting', 'bonus', 'actor_select'] as const).includes(saved.screen as 'acting' | 'bonus' | 'actor_select')
     ? 'pass'
     : saved.screen;
   return { ...saved, screen, actingStartTime: null };
@@ -63,9 +65,11 @@ function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.screen, state.round, state.sessionId]);
 
-  // After PassPhone, check if there's a pending bonus round
+  // After PassPhone — in team_choice mode go to actor select; otherwise bonus/reveal
   const handlePassPhoneNext = () => {
-    if (state.pendingBonusRound) {
+    if (state.isTeamMode && state.actingMode === 'team_choice') {
+      wrappedDispatch({ type: 'GO_TO_SCREEN', screen: 'actor_select' });
+    } else if (state.pendingBonusRound) {
       wrappedDispatch({ type: 'GO_TO_SCREEN', screen: 'bonus' });
     } else {
       wrappedDispatch({ type: 'GO_TO_SCREEN', screen: 'reveal' });
@@ -81,8 +85,14 @@ function App() {
         {state.screen === 'setup' && (
           <SetupScreen state={state} dispatch={wrappedDispatch} />
         )}
+        {state.screen === 'team_setup' && (
+          <TeamSetupScreen state={state} dispatch={wrappedDispatch} />
+        )}
         {state.screen === 'pass' && (
           <PassPhoneScreen state={state} onNext={handlePassPhoneNext} />
+        )}
+        {state.screen === 'actor_select' && (
+          <ActorSelectionScreen state={state} dispatch={wrappedDispatch} />
         )}
         {state.screen === 'bonus' && (
           <BonusRoundScreen state={state} dispatch={wrappedDispatch} />

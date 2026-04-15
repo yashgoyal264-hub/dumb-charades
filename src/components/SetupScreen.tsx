@@ -293,9 +293,35 @@ export function SetupScreen({ state, dispatch }: Props) {
         )}
       </section>
 
+      {/* ── Play in Teams ────────────────────────────────────── */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between p-4 rounded-xl border border-[#2a2a3e]"
+          style={{ background: 'rgba(255,255,255,0.02)' }}>
+          <div>
+            <p className="text-white font-bold text-sm">Play in Teams</p>
+            <p className="text-gray-500 text-xs">Team scores · bonus round logic stays hidden</p>
+          </div>
+          <button
+            onClick={() => dispatch({ type: 'SET_TEAM_MODE', isTeamMode: !state.isTeamMode })}
+            className={`w-12 h-6 rounded-full relative transition-colors cursor-pointer ${
+              state.isTeamMode ? 'bg-[#7c3aed]' : 'bg-[#2a2a3e]'
+            }`}>
+            <span className="absolute top-1 w-4 h-4 bg-white rounded-full transition-all"
+              style={{ left: state.isTeamMode ? '26px' : '4px' }} />
+          </button>
+        </div>
+      </section>
+
       {/* ── Start ────────────────────────────────────────────── */}
       <button
-        onClick={() => canStart && dispatch({ type: 'START_GAME' })}
+        onClick={() => {
+          if (!canStart) return;
+          if (state.isTeamMode) {
+            dispatch({ type: 'GO_TO_SCREEN', screen: 'team_setup' });
+          } else {
+            dispatch({ type: 'START_GAME' });
+          }
+        }}
         disabled={!canStart}
         className="w-full py-5 rounded-2xl text-xl font-black text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer mb-4"
         style={{
@@ -303,7 +329,7 @@ export function SetupScreen({ state, dispatch }: Props) {
           boxShadow: canStart ? '0 0 30px rgba(255,60,111,0.25)' : 'none',
           fontFamily: 'Outfit, system-ui, sans-serif',
         }}>
-        Start Game
+        {state.isTeamMode ? 'Set Up Teams →' : 'Start Game'}
       </button>
     </div>
   );

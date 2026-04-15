@@ -17,6 +17,7 @@ export function ResultScreen({ state, dispatch }: Props) {
     return names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1];
   };
   const actor = state.players[state.currentActorIndex];
+  const teamName = state.isTeamMode ? state.teams[state.currentTeamIndex]?.name : null;
 
   const { playBuzzer } = useSound();
 
@@ -102,11 +103,16 @@ export function ResultScreen({ state, dispatch }: Props) {
     );
   }
 
+  const scoreDisplay = teamName ? `${teamName} +${lastActorPoints}` : `${lastGuesser} +${lastGuesserPoints}  ·  ${actor} +${lastActorPoints}`;
+  const timeoutDisplay = teamName
+    ? (bonusRoundAccepted ? `${teamName} −${bonusRoundValue} pts` : state.houseRules.timeoutPenalty ? `${teamName} −1 pt (house rule)` : 'No points this round')
+    : (bonusRoundAccepted ? `${actor} −${bonusRoundValue} pts` : state.houseRules.timeoutPenalty ? `${actor} −1 pt (house rule)` : 'No points this round');
+
   const config = {
     guessed: {
       emoji: '🎉',
-      title: `${lastGuesser} got it!`,
-      subtitle: `${lastGuesser} +${lastGuesserPoints}  ·  ${actor} +${lastActorPoints}`,
+      title: teamName ? `${teamName} got it!` : `${lastGuesser} got it!`,
+      subtitle: scoreDisplay,
       color: '#10b981',
       bg: 'rgba(16,185,129,0.1)',
       borderColor: 'rgba(16,185,129,0.25)',
@@ -122,9 +128,7 @@ export function ResultScreen({ state, dispatch }: Props) {
     timeout: {
       emoji: bonusRoundAccepted ? '💸' : '⏰',
       title: bonusRoundAccepted ? `Bonus lost!` : `Time's Up!`,
-      subtitle: bonusRoundAccepted
-        ? `${actor} −${bonusRoundValue} pts`
-        : state.houseRules.timeoutPenalty ? `${actor} −1 pt (house rule)` : 'No points this round',
+      subtitle: timeoutDisplay,
       color: '#ef4444',
       bg: 'rgba(239,68,68,0.1)',
       borderColor: 'rgba(239,68,68,0.25)',
@@ -177,6 +181,15 @@ export function ResultScreen({ state, dispatch }: Props) {
           </h2>
           <p className="text-gray-400 text-sm">{c.subtitle}</p>
         </div>
+
+        {/* Team context row */}
+        {teamName && lastResult === 'guessed' && (
+          <div className="w-full flex gap-2 text-xs text-gray-500 justify-center animate-slide-up">
+            <span>Actor: <span className="text-gray-300 font-bold">{actor}</span></span>
+            <span>·</span>
+            <span>Guessed by: <span className="text-gray-300 font-bold">{lastGuesser}</span></span>
+          </div>
+        )}
 
         {/* Badges row */}
         <div className="flex gap-2 flex-wrap justify-center">

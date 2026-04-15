@@ -12,7 +12,10 @@ interface Props {
 export function ActingScreen({ state, dispatch }: Props) {
   const duration = state.duration;
   const actor    = state.players[state.currentActorIndex];
-  const guessers = state.players.filter((_, i) => i !== state.currentActorIndex);
+  // In team mode only the actor's teammates can guess; in individual mode everyone else
+  const guessers = state.isTeamMode
+    ? (state.teams[state.currentTeamIndex]?.members ?? []).filter(m => m !== actor)
+    : state.players.filter((_, i) => i !== state.currentActorIndex);
 
   const [splitMode, setSplitMode] = useState(false);
   const [splitList, setSplitList] = useState<string[]>([]);
@@ -141,7 +144,7 @@ export function ActingScreen({ state, dispatch }: Props) {
 
       {/* Bottom controls */}
       <div className="w-full mt-4 flex gap-3">
-        {guessers.length >= 2 && (
+        {guessers.length >= 2 && !state.isTeamMode && (
           <button
             onClick={() => { setSplitMode(!splitMode); setSplitList([]); }}
             className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 cursor-pointer border ${
