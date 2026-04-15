@@ -1,5 +1,7 @@
-import { useReducer } from 'react';
+import { useEffect, useReducer } from 'react';
 import { gameReducer, initialState } from './gameReducer';
+import { saveState, loadState } from './utils/persist';
+import type { GameState } from './types';
 import { HomeScreen } from './components/HomeScreen';
 import { SetupScreen } from './components/SetupScreen';
 import { PassPhoneScreen } from './components/PassPhoneScreen';
@@ -9,8 +11,23 @@ import { ActingScreen } from './components/ActingScreen';
 import { ResultScreen } from './components/ResultScreen';
 import { ScoreboardScreen } from './components/ScoreboardScreen';
 
+function loadInitialState(): GameState {
+  const saved = loadState();
+  if (!saved) return initialState;
+  // Redirect mid-round transient screens back to pass so the timer restarts cleanly
+  const screen = (saved.screen === 'acting' || saved.screen === 'bonus')
+    ? 'pass'
+    : saved.screen;
+  return { ...saved, screen, actingStartTime: null };
+}
+
 function App() {
-  const [state, dispatch] = useReducer(gameReducer, initialState);
+  const [state, dispatch] = useReducer(gameReducer, undefined, loadInitialState);
+
+  // Persist state to localStorage after every change
+  useEffect(() => {
+    saveState(state);
+  }, [state]);
 
   // After PassPhone, check if there's a pending bonus round
   const handlePassPhoneNext = () => {
