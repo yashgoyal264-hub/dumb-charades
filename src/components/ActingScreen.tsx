@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { GameState, GameAction } from '../types';
 import { useTimer } from '../hooks/useTimer';
+import { useSound } from '../hooks/useSound';
 import { Timer } from './Timer';
 
 interface Props {
@@ -16,6 +17,8 @@ export function ActingScreen({ state, dispatch }: Props) {
   const [splitMode,  setSplitMode]  = useState(false);
   const [splitFirst, setSplitFirst] = useState<string | null>(null);
 
+  const { playTick } = useSound();
+
   const { timeLeft, isRunning, progress, color, isUrgent, start } = useTimer({
     duration,
     onComplete: () => dispatch({ type: 'TIMEOUT' }),
@@ -26,6 +29,13 @@ export function ActingScreen({ state, dispatch }: Props) {
     const t = setTimeout(() => start(), 300);
     return () => clearTimeout(t);
   }, [start]);
+
+  // Tick sounds for the last 3 seconds
+  useEffect(() => {
+    if (timeLeft <= 3 && timeLeft > 0 && isRunning) {
+      playTick(timeLeft);
+    }
+  }, [timeLeft, isRunning, playTick]);
 
   const handleGuess = (guesser: string) => {
     const ts = Date.now();

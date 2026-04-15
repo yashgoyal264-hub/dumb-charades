@@ -21,6 +21,7 @@ export interface HistoryEntry {
   isRecycled?: boolean;
   bonusRound?: boolean;
   bonusValue?: number;
+  overtimeDuration?: number;
 }
 
 export interface GameState {
@@ -74,5 +75,5 @@ export type GameAction =
   | { type: 'SPLIT_GUESS'; guesser1: string; guesser2: string; timestamp: number }
   | { type: 'TIMEOUT' }
   | { type: 'FOUL' }
-  | { type: 'NEXT_ROUND' }
+  | { type: 'NEXT_ROUND'; overtimeDuration?: number }
   | { type: 'RESET_GAME' };

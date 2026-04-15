@@ -380,6 +380,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return { ...state, screen: 'scoreboard' };
       }
 
+      // Stamp overtime duration on the last history entry if this was a timeout round
+      const historyWithOvertime = action.overtimeDuration !== undefined && state.history.length > 0
+        ? state.history.map((entry, i) =>
+            i === state.history.length - 1
+              ? { ...entry, overtimeDuration: action.overtimeDuration }
+              : entry
+          )
+        : state.history;
+
       const nextActorIndex = (state.currentActorIndex + 1) % state.players.length;
       const { movie, queue, queueIndex, isRecycled } = getNextMovie({ ...state });
       const bonusCheck = checkBonusRound({ ...state, round: state.round + 1 }, nextActorIndex);
@@ -393,6 +402,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         movieQueueIndex: queueIndex,
         round: state.round + 1,
         skipsRemaining: state.houseRules.noSkip ? 0 : SKIP_COUNT,
+        history: historyWithOvertime,
         lastResult: null,
         lastGuesser: null,
         lastSplitGuesser: null,

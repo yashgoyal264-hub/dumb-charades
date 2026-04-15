@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
 import type { GameState, GameAction } from '../types';
+import { useSound } from '../hooks/useSound';
 
 interface Props {
   state: GameState;
@@ -9,6 +11,60 @@ export function ResultScreen({ state, dispatch }: Props) {
   const { lastResult, lastGuesser, lastSplitGuesser, currentMovie, lastActorPoints,
     lastGuesserPoints, lastQuickGuessBonus, bonusRoundAccepted, bonusRoundValue, suddenDeathWinner } = state;
   const actor = state.players[state.currentActorIndex];
+
+  const { playBuzzer } = useSound();
+
+  // Overtime state — only active on timeout result
+  const [overtimeElapsed, setOvertimeElapsed] = useState(0);
+  const [flashOn, setFlashOn] = useState(false);
+  const [flashPhase, setFlashPhase] = useState<'rapid' | 'steady' | 'none'>('none');
+  const overtimeRef = useRef(0);
+
+  useEffect(() => {
+    if (lastResult !== 'timeout') return;
+
+    playBuzzer();
+    setFlashPhase('rapid');
+
+    // Rapid flash: toggle every 180ms for 2.4s (~13 flashes)
+    let flashState = false;
+    const flashInterval = setInterval(() => {
+      flashState = !flashState;
+      setFlashOn(flashState);
+    }, 180);
+
+    const flashTimeout = setTimeout(() => {
+      clearInterval(flashInterval);
+      setFlashOn(true);
+      setFlashPhase('steady');
+    }, 2400);
+
+    // Overtime counter: starts immediately, counts up every second
+    const overtimeInterval = setInterval(() => {
+      overtimeRef.current += 1;
+      setOvertimeElapsed(overtimeRef.current);
+    }, 1000);
+
+    return () => {
+      clearInterval(flashInterval);
+      clearTimeout(flashTimeout);
+      clearInterval(overtimeInterval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const overtimeTotal = state.duration + overtimeElapsed;
+
+  const bgStyle = (() => {
+    if (lastResult !== 'timeout') return {};
+    if (flashPhase === 'rapid') {
+      return { background: flashOn ? 'rgba(239,68,68,0.22)' : '#0a0a0f' };
+    }
+    if (flashPhase === 'steady') {
+      return { background: 'rgba(239,68,68,0.09)' };
+    }
+    return {};
+  })();
 
   // Sudden death win overrides everything
   if (suddenDeathWinner) {
@@ -80,8 +136,26 @@ export function ResultScreen({ state, dispatch }: Props) {
   const c = lastResult ? config[lastResult] : config.timeout;
 
   return (
-    <div className="flex flex-col items-center justify-between min-h-dvh px-6 py-10 screen-enter">
+    <div
+      className="flex flex-col items-center justify-between min-h-dvh px-6 py-10 screen-enter transition-colors duration-300"
+      style={bgStyle}
+    >
       <div className="flex-1 flex flex-col items-center justify-center text-center w-full gap-4">
+
+        {/* Overtime timer — only shown on timeout */}
+        {lastResult === 'timeout' && (
+          <div className="w-full rounded-2xl p-4 animate-fade-in-scale"
+            style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)' }}>
+            <p className="text-xs uppercase tracking-widest text-red-400 mb-1">Still ticking</p>
+            <p
+              className="text-5xl font-black text-red-400"
+              style={{ fontFamily: 'Space Mono, monospace' }}
+            >
+              {overtimeTotal}s
+            </p>
+          </div>
+        )}
+
         <div className="animate-bounce-in text-7xl mb-2">{c.emoji}</div>
 
         {/* Main result card */}
@@ -133,7 +207,10 @@ export function ResultScreen({ state, dispatch }: Props) {
       {/* Actions */}
       <div className="w-full flex flex-col gap-3">
         <button
-          onClick={() => dispatch({ type: 'NEXT_ROUND' })}
+          onClick={() => dispatch({
+            type: 'NEXT_ROUND',
+            overtimeDuration: lastResult === 'timeout' ? overtimeTotal : undefined,
+          })}
           className="w-full py-5 rounded-2xl text-xl font-black text-white transition-all active:scale-95 cursor-pointer"
           style={{
             background: 'linear-gradient(135deg, #ff3c6f, #7c3aed)',
