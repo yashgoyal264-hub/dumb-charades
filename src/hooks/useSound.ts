@@ -30,30 +30,52 @@ export function useSound() {
     } catch (_) { /* audio not available */ }
   }, [ctx]);
 
-  // 3 rapid high beeps — last 3 seconds of timer
-  const playTick = useCallback((second: number) => {
-    // Pitch rises as urgency increases: 3s=660, 2s=880, 1s=1100
-    const freq = second === 3 ? 660 : second === 2 ? 880 : 1100;
-    beep(freq, 0.12, 0, 0.25);
+  // Clock tick — sharp uniform click, same pitch every second
+  const playTick = useCallback((_second: number) => {
+    beep(900, 0.03, 0, 0.28);
   }, [beep]);
 
-  // Harsh buzzer at timeout — sawtooth wave burst
+  // Bell ring at timeout — sustained "tinnnnn" with bell harmonics
   const playBuzzer = useCallback(() => {
     try {
       const c = ctx();
-      // Three descending saw bursts for harshness
-      [0, 0.18, 0.36].forEach((delay, i) => {
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.connect(gain);
-        gain.connect(c.destination);
-        osc.type = 'sawtooth';
-        osc.frequency.value = 180 - i * 20;
-        gain.gain.setValueAtTime(0.35, c.currentTime + delay);
-        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + 0.35);
-        osc.start(c.currentTime + delay);
-        osc.stop(c.currentTime + delay + 0.4);
-      });
+      const now = c.currentTime;
+
+      // Fundamental: 880 Hz, rings for ~2.5s
+      const osc1 = c.createOscillator();
+      const gain1 = c.createGain();
+      osc1.connect(gain1);
+      gain1.connect(c.destination);
+      osc1.type = 'sine';
+      osc1.frequency.value = 880;
+      gain1.gain.setValueAtTime(0.45, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+      osc1.start(now);
+      osc1.stop(now + 2.6);
+
+      // Bell harmonic: ~2427 Hz (880 × 2.76), decays faster
+      const osc2 = c.createOscillator();
+      const gain2 = c.createGain();
+      osc2.connect(gain2);
+      gain2.connect(c.destination);
+      osc2.type = 'sine';
+      osc2.frequency.value = 2427;
+      gain2.gain.setValueAtTime(0.15, now);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+      osc2.start(now);
+      osc2.stop(now + 1.1);
+
+      // Slight shimmer: 883 Hz beating against fundamental
+      const osc3 = c.createOscillator();
+      const gain3 = c.createGain();
+      osc3.connect(gain3);
+      gain3.connect(c.destination);
+      osc3.type = 'sine';
+      osc3.frequency.value = 883;
+      gain3.gain.setValueAtTime(0.12, now);
+      gain3.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+      osc3.start(now);
+      osc3.stop(now + 2.1);
     } catch (_) { /* audio not available */ }
   }, [ctx]);
 
