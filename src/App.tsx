@@ -1,7 +1,8 @@
-import { useEffect, useReducer } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { gameReducer, initialState } from './gameReducer';
 import { saveState, loadState } from './utils/persist';
-import type { GameState } from './types';
+import { createSession, logRound, closeSession } from './utils/logger';
+import type { GameState, GameAction } from './types';
 import { HomeScreen } from './components/HomeScreen';
 import { SetupScreen } from './components/SetupScreen';
 import { PassPhoneScreen } from './components/PassPhoneScreen';
@@ -29,12 +30,45 @@ function App() {
     saveState(state);
   }, [state]);
 
+  // Track the last round we logged so we never double-log
+  const lastLoggedRound = useRef(0);
+
+  // Wrapped dispatch: fires Supabase side-effects before/after key actions
+  const wrappedDispatch = useCallback((action: GameAction) => {
+    if (action.type === 'START_GAME') {
+      lastLoggedRound.current = 0;
+      dispatch(action);
+      createSession(state).then(sessionId => {
+        if (sessionId) dispatch({ type: 'SET_SESSION_ID', sessionId });
+      });
+      return;
+    }
+    if (action.type === 'RESET_GAME' && state.sessionId) {
+      closeSession(state.sessionId, state);
+    }
+    dispatch(action);
+  }, [state]) as React.Dispatch<GameAction>;
+
+  // Log each completed round when the result screen appears
+  useEffect(() => {
+    if (
+      state.screen === 'result' &&
+      state.sessionId &&
+      state.lastResult &&
+      state.round > lastLoggedRound.current
+    ) {
+      lastLoggedRound.current = state.round;
+      logRound(state.sessionId, state);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.screen, state.round, state.sessionId]);
+
   // After PassPhone, check if there's a pending bonus round
   const handlePassPhoneNext = () => {
     if (state.pendingBonusRound) {
-      dispatch({ type: 'GO_TO_SCREEN', screen: 'bonus' });
+      wrappedDispatch({ type: 'GO_TO_SCREEN', screen: 'bonus' });
     } else {
-      dispatch({ type: 'GO_TO_SCREEN', screen: 'reveal' });
+      wrappedDispatch({ type: 'GO_TO_SCREEN', screen: 'reveal' });
     }
   };
 
@@ -42,28 +76,28 @@ function App() {
     <div className="min-h-dvh bg-[#0a0a0f] flex flex-col items-center justify-start">
       <div className="w-full max-w-[450px] min-h-dvh flex flex-col">
         {state.screen === 'home' && (
-          <HomeScreen onStart={() => dispatch({ type: 'GO_TO_SCREEN', screen: 'setup' })} />
+          <HomeScreen onStart={() => wrappedDispatch({ type: 'GO_TO_SCREEN', screen: 'setup' })} />
         )}
         {state.screen === 'setup' && (
-          <SetupScreen state={state} dispatch={dispatch} />
+          <SetupScreen state={state} dispatch={wrappedDispatch} />
         )}
         {state.screen === 'pass' && (
           <PassPhoneScreen state={state} onNext={handlePassPhoneNext} />
         )}
         {state.screen === 'bonus' && (
-          <BonusRoundScreen state={state} dispatch={dispatch} />
+          <BonusRoundScreen state={state} dispatch={wrappedDispatch} />
         )}
         {state.screen === 'reveal' && (
-          <RevealScreen state={state} dispatch={dispatch} />
+          <RevealScreen state={state} dispatch={wrappedDispatch} />
         )}
         {state.screen === 'acting' && (
-          <ActingScreen state={state} dispatch={dispatch} />
+          <ActingScreen state={state} dispatch={wrappedDispatch} />
         )}
         {state.screen === 'result' && (
-          <ResultScreen state={state} dispatch={dispatch} />
+          <ResultScreen state={state} dispatch={wrappedDispatch} />
         )}
         {state.screen === 'scoreboard' && (
-          <ScoreboardScreen state={state} dispatch={dispatch} />
+          <ScoreboardScreen state={state} dispatch={wrappedDispatch} />
         )}
       </div>
     </div>

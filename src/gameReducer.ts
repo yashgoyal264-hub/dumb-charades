@@ -121,6 +121,7 @@ export const initialState: GameState = {
   bonusRoundValue: 0,
   suddenDeathWinner: null,
   actingStartTime: null,
+  sessionId: null,
 };
 
 // ─── Reducer ─────────────────────────────────────────────────────────────────
@@ -419,6 +420,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     // ── Reset ──────────────────────────────────────────────────────────────
+
+    case 'SET_SESSION_ID':
+      return { ...state, sessionId: action.sessionId };
 
     case 'RESET_GAME':
       return { ...initialState };

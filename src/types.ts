@@ -56,6 +56,8 @@ export interface GameState {
   // Timer
   duration: number;
   actingStartTime: number | null;
+  // Logging
+  sessionId: string | null;
 }
 
 export type GameAction =
@@ -76,4 +78,5 @@ export type GameAction =
   | { type: 'TIMEOUT' }
   | { type: 'FOUL' }
   | { type: 'NEXT_ROUND'; overtimeDuration?: number }
+  | { type: 'SET_SESSION_ID'; sessionId: string }
   | { type: 'RESET_GAME' };
