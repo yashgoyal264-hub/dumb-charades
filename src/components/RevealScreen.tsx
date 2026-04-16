@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { GameState, GameAction } from '../types';
 import { SKIP_COUNT } from '../gameReducer';
 import { ScrambleTitle } from './ScrambleTitle';
@@ -29,8 +30,11 @@ function detectCategory(movie: string): string {
 
 export function RevealScreen({ state, dispatch }: Props) {
   const actor = state.players[state.currentActorIndex];
-  const categoryKey = detectCategory(state.currentMovie);
+  const categoryKey   = detectCategory(state.currentMovie);
   const categoryLabel = CATEGORY_LABEL[categoryKey] ?? '🎭 Act';
+
+  // IE-8: title starts blurred — tap once to reveal permanently for this round
+  const [titleRevealed, setTitleRevealed] = useState(false);
 
   return (
     <div className="flex flex-col items-center justify-between min-h-dvh px-6 py-10 screen-enter">
@@ -54,13 +58,27 @@ export function RevealScreen({ state, dispatch }: Props) {
           <span className="text-xs font-bold uppercase tracking-widest text-gray-600">{categoryLabel}</span>
         </div>
 
-        <h1
-          className="text-5xl font-black leading-tight"
-          key={state.currentMovie}
-          style={{ fontFamily: 'Outfit, system-ui, sans-serif' }}
+        {/* IE-8: tap to reveal title; blurred until first tap */}
+        <div
+          className="cursor-pointer"
+          onClick={() => setTitleRevealed(true)}
+          style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
         >
-          <ScrambleTitle text={state.currentMovie} />
-        </h1>
+          {!titleRevealed && (
+            <p className="text-xs text-gray-600 mb-2 animate-pulse">👁 Tap to reveal</p>
+          )}
+          <h1
+            className="text-5xl font-black leading-tight transition-all duration-300"
+            key={state.currentMovie}
+            style={{
+              fontFamily: 'Outfit, system-ui, sans-serif',
+              filter: titleRevealed ? 'none' : 'blur(10px)',
+              WebkitTouchCallout: 'none',
+            }}
+          >
+            <ScrambleTitle text={state.currentMovie} />
+          </h1>
+        </div>
 
         <div className="flex gap-2 flex-wrap justify-center">
           {state.isRecycledMovie && (

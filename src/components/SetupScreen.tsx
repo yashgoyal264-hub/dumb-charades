@@ -9,15 +9,15 @@ interface Props {
 }
 
 const MODES: { id: Mode; label: string; desc: string }[] = [
-  { id: 'rapid',    label: 'Rapid Fire', desc: 'Easy & popular only'  },
-  { id: 'classic',  label: 'Classic',    desc: 'Mixed difficulty'     },
-  { id: 'difficult',label: 'Difficult',  desc: 'Obscure & hard only'  },
+  { id: 'rapid',     label: 'Rapid Fire', desc: 'Easy & popular only'  },
+  { id: 'classic',   label: 'Classic',    desc: 'Mixed difficulty'     },
+  { id: 'difficult', label: 'Difficult',  desc: 'Obscure & hard only'  },
 ];
 
 const CATEGORIES: { id: Category; label: string }[] = [
-  { id: 'movies', label: 'Movies'  },
-  { id: 'songs',  label: 'Songs'   },
-  { id: 'series', label: 'Series'  },
+  { id: 'movies', label: 'Movies' },
+  { id: 'songs',  label: 'Songs'  },
+  { id: 'series', label: 'Series' },
 ];
 
 // 5 s steps, 5 → 120
@@ -31,10 +31,27 @@ function getLangLabels(cats: Category[]) {
   return                            ['Bollywood',           'Hollywood'];
 }
 
+// VP-9: shared back button style
+function BackButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-gray-400 text-sm font-bold cursor-pointer hover:text-white transition-colors mb-6 w-fit"
+      style={{ background: 'rgba(255,255,255,0.05)' }}
+    >
+      ← Back
+    </button>
+  );
+}
+
 export function SetupScreen({ state, dispatch }: Props) {
   const [nameInput,      setNameInput]      = useState('');
   const [showHouseRules, setShowHouseRules] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // IE-2: swipe-to-remove tracking
+  const chipTouchRef = useRef<{ name: string; startX: number; time: number } | null>(null);
+  const [swipingPlayer, setSwipingPlayer] = useState<string | null>(null);
 
   const addPlayer = () => {
     const name = nameInput.trim().slice(0, 12);
@@ -61,18 +78,29 @@ export function SetupScreen({ state, dispatch }: Props) {
     dispatch({ type: 'SET_LANGUAGES', languages: next });
   };
 
+  // IE-2: swipe-left-to-remove chip handlers
+  const handleChipTouchStart = (name: string, e: React.TouchEvent) => {
+    chipTouchRef.current = { name, startX: e.touches[0].clientX, time: Date.now() };
+    setSwipingPlayer(name);
+  };
+  const handleChipTouchEnd = (name: string, e: React.TouchEvent) => {
+    if (!chipTouchRef.current) return;
+    const deltaX  = e.changedTouches[0].clientX - chipTouchRef.current.startX;
+    const elapsed = Date.now() - chipTouchRef.current.time;
+    chipTouchRef.current = null;
+    setSwipingPlayer(null);
+    if (deltaX < -50 && elapsed < 400) removePlayer(name);
+  };
+
   const langLabels = getLangLabels(state.categories);
   const canStart   = state.players.length >= 2 && state.categories.length > 0
                   && (state.languages.bollywood || state.languages.hollywood);
+  const isCustomDuration = state.duration !== DURATIONS[state.mode];
 
   return (
     <div className="flex flex-col min-h-dvh px-5 py-8 screen-enter overflow-y-auto">
-      <button
-        onClick={() => dispatch({ type: 'GO_TO_SCREEN', screen: 'home' })}
-        className="text-gray-500 text-left mb-6 text-sm cursor-pointer hover:text-gray-300 transition-colors w-fit"
-      >
-        ← Back
-      </button>
+      {/* VP-9: standardized back button */}
+      <BackButton onClick={() => dispatch({ type: 'GO_TO_SCREEN', screen: 'home' })} />
 
       <h2 className="text-2xl font-black text-white mb-8"
         style={{ fontFamily: 'Outfit, system-ui, sans-serif' }}>
@@ -84,7 +112,7 @@ export function SetupScreen({ state, dispatch }: Props) {
         <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
           Players ({state.players.length}/10)
         </label>
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 relative">
           <input
             ref={inputRef}
             type="text"
@@ -93,8 +121,17 @@ export function SetupScreen({ state, dispatch }: Props) {
             onKeyDown={e => e.key === 'Enter' && addPlayer()}
             placeholder="Enter name..."
             maxLength={12}
-            className="flex-1 bg-[#1a1a2e] border border-[#2a2a3e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-base outline-none focus:border-[#7c3aed] transition-colors"
+            className="flex-1 bg-[#1a1a2e] border border-[#2a2a3e] rounded-xl px-4 py-3 text-white placeholder-gray-600 text-base outline-none focus:border-[#7c3aed] transition-colors pr-14"
           />
+          {/* P1-3: character counter when close to limit */}
+          {nameInput.length >= 8 && (
+            <span
+              className="absolute right-[68px] top-1/2 -translate-y-1/2 text-xs font-bold pointer-events-none"
+              style={{ color: nameInput.length === 12 ? '#ef4444' : '#6b7280' }}
+            >
+              {nameInput.length}/12
+            </span>
+          )}
           <button
             onClick={addPlayer}
             disabled={!nameInput.trim() || state.players.length >= 10}
@@ -109,11 +146,23 @@ export function SetupScreen({ state, dispatch }: Props) {
           : (
             <div className="flex flex-wrap gap-2">
               {state.players.map(name => (
-                <div key={name}
-                  className="flex items-center gap-2 bg-[#1a1a2e] border border-[#2a2a3e] rounded-full px-4 py-2 text-sm text-white">
+                /* IE-2: swipe left to remove */
+                <div
+                  key={name}
+                  onTouchStart={e => handleChipTouchStart(name, e)}
+                  onTouchEnd={e => handleChipTouchEnd(name, e)}
+                  className="flex items-center gap-2 rounded-full px-4 py-2 text-sm text-white transition-colors"
+                  style={{
+                    background: swipingPlayer === name ? 'rgba(239,68,68,0.15)' : '#1a1a2e',
+                    border: `1px solid ${swipingPlayer === name ? 'rgba(239,68,68,0.4)' : '#2a2a3e'}`,
+                  }}
+                >
                   <span>{name}</span>
-                  <button onClick={() => removePlayer(name)}
-                    className="text-gray-500 hover:text-red-400 transition-colors cursor-pointer text-base leading-none">
+                  {/* P1-2: larger tap target for × button */}
+                  <button
+                    onClick={() => removePlayer(name)}
+                    className="w-6 h-6 flex items-center justify-center rounded-full text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors cursor-pointer"
+                  >
                     ×
                   </button>
                 </div>
@@ -163,36 +212,50 @@ export function SetupScreen({ state, dispatch }: Props) {
         </div>
       </section>
 
-      {/* ── Mode + Timer ─────────────────────────────────────── */}
+      {/* ── VP-4: Mode + Timer in one unified card ─────────── */}
       <section className="mb-8">
         <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
-          Mode
+          Mode & Timer
         </label>
-        <div className="flex flex-col gap-2 mb-6">
-          {MODES.map(m => (
-            <button key={m.id} onClick={() => dispatch({ type: 'SET_MODE', mode: m.id })}
-              className={`flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all active:scale-[0.98] cursor-pointer ${
-                state.mode === m.id ? 'border-[#7c3aed] text-white' : 'border-transparent bg-[#1a1a2e] text-gray-400'
-              }`}
-              style={state.mode === m.id ? { background: 'rgba(124,58,237,0.12)' } : {}}>
-              <div className="flex-1">
-                <div className="font-bold text-base">{m.label}</div>
-                <div className="text-xs text-gray-500">{m.desc}</div>
-              </div>
-              <span className="text-xs font-bold px-2 py-1 rounded-lg"
-                style={{
-                  background: state.mode === m.id ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.05)',
-                  color: state.mode === m.id ? '#c084fc' : '#4b5563',
-                  fontFamily: 'Space Mono, monospace',
-                }}>
-                {DURATIONS[m.id]}s
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Timer duration wheel */}
         <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0e1a', border: '1px solid #2a2a3e' }}>
+          {/* Mode rows */}
+          <div className="p-3 flex flex-col gap-2">
+            {MODES.map(m => (
+              <button key={m.id} onClick={() => dispatch({ type: 'SET_MODE', mode: m.id })}
+                className={`flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all active:scale-[0.98] cursor-pointer ${
+                  state.mode === m.id ? 'border-[#7c3aed] text-white' : 'border-transparent text-gray-400'
+                }`}
+                style={state.mode === m.id
+                  ? { background: 'rgba(124,58,237,0.12)' }
+                  : { background: 'rgba(255,255,255,0.03)' }}>
+                <div className="flex-1">
+                  <div className="font-bold text-base">{m.label}</div>
+                  <div className="text-xs text-gray-500">{m.desc}</div>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-xs font-bold px-2 py-1 rounded-lg"
+                    style={{
+                      background: state.mode === m.id ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.05)',
+                      color: state.mode === m.id ? '#c084fc' : '#4b5563',
+                      fontFamily: 'Space Mono, monospace',
+                    }}>
+                    {state.mode === m.id ? state.duration : DURATIONS[m.id]}s
+                  </span>
+                  {/* VP-4: custom badge when duration deviates from mode default */}
+                  {state.mode === m.id && isCustomDuration && (
+                    <span className="text-[10px] mt-0.5 font-bold" style={{ color: '#fbbf24' }}>
+                      custom
+                    </span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-[#2a2a3e] mx-4" />
+
+          {/* Timer wheel */}
           <div className="px-5 pt-4 pb-2 flex items-center justify-between">
             <div>
               <p className="text-white text-sm font-bold">Timer Duration</p>
@@ -233,9 +296,9 @@ export function SetupScreen({ state, dispatch }: Props) {
         {showHouseRules && (
           <div className="mt-3 flex flex-col gap-2 animate-slide-up">
             {([
-              { key: 'noSkip'         as const, label: 'No Skips',         desc: 'Actor must act every movie'      },
-              { key: 'timeoutPenalty' as const, label: 'Timeout Penalty',  desc: 'Actor loses 1 pt on timeout'    },
-              { key: 'allowProps'     as const, label: 'Allow Props',      desc: 'Actor can use nearby objects'    },
+              { key: 'noSkip'         as const, label: 'No Skips',        desc: 'Actor must act every movie'   },
+              { key: 'timeoutPenalty' as const, label: 'Timeout Penalty', desc: 'Actor loses 1 pt on timeout' },
+              { key: 'allowProps'     as const, label: 'Allow Props',     desc: 'Actor can use nearby objects' },
             ] as const).map(rule => (
               <div key={rule.key} className="flex items-center justify-between p-3 rounded-xl"
                 style={{ background: 'rgba(255,255,255,0.03)' }}>
@@ -311,6 +374,22 @@ export function SetupScreen({ state, dispatch }: Props) {
           </button>
         </div>
       </section>
+
+      {/* P1-1: checklist of unmet requirements when Start is disabled */}
+      {!canStart && (
+        <div className="mb-4 flex flex-col gap-1.5 px-1">
+          {[
+            { ok: state.players.length >= 2,                                       text: `Players (${state.players.length}/2 min)` },
+            { ok: state.categories.length > 0,                                     text: 'Category selected'                       },
+            { ok: state.languages.bollywood || state.languages.hollywood,           text: 'Region selected'                         },
+          ].map(item => (
+            <div key={item.text} className="flex items-center gap-2 text-xs font-bold">
+              <span style={{ color: item.ok ? '#10b981' : '#4b5563' }}>{item.ok ? '✓' : '○'}</span>
+              <span style={{ color: item.ok ? '#6b7280' : '#9ca3af' }}>{item.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Start ────────────────────────────────────────────── */}
       <button

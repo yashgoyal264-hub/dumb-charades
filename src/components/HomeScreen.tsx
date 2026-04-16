@@ -1,5 +1,8 @@
 interface Props {
   onStart: () => void;
+  isGameInProgress?: boolean;
+  resumeRound?: number;
+  onResume?: () => void;
 }
 
 // Abstract geometric logo — overlapping rhombuses with gradient
@@ -35,31 +38,12 @@ function AppLogo() {
       <circle cx="48" cy="48" r="46" stroke="url(#g1)" strokeWidth="1.5" strokeOpacity="0.3" />
 
       {/* Main diamond */}
-      <polygon
-        points="48,10 82,48 48,86 14,48"
-        fill="url(#g1)"
-        opacity="0.15"
-      />
-      <polygon
-        points="48,10 82,48 48,86 14,48"
-        stroke="url(#g1)"
-        strokeWidth="1.5"
-        fill="none"
-      />
+      <polygon points="48,10 82,48 48,86 14,48" fill="url(#g1)" opacity="0.15" />
+      <polygon points="48,10 82,48 48,86 14,48" stroke="url(#g1)" strokeWidth="1.5" fill="none" />
 
       {/* Rotated inner diamond */}
-      <polygon
-        points="48,22 74,48 48,74 22,48"
-        fill="url(#g2)"
-        opacity="0.12"
-      />
-      <polygon
-        points="48,22 74,48 48,74 22,48"
-        stroke="url(#g2)"
-        strokeWidth="1"
-        fill="none"
-        opacity="0.6"
-      />
+      <polygon points="48,22 74,48 48,74 22,48" fill="url(#g2)" opacity="0.12" />
+      <polygon points="48,22 74,48 48,74 22,48" stroke="url(#g2)" strokeWidth="1" fill="none" opacity="0.6" />
 
       {/* Center gem facets */}
       <polygon points="48,30 62,48 48,66 34,48" fill="url(#g1)" opacity="0.35" filter="url(#glow)" />
@@ -77,7 +61,7 @@ function AppLogo() {
   );
 }
 
-export function HomeScreen({ onStart }: Props) {
+export function HomeScreen({ onStart, isGameInProgress, resumeRound, onResume }: Props) {
   return (
     <div className="flex flex-col items-center justify-center min-h-dvh px-6 text-center screen-enter">
       {/* Logo */}
@@ -92,13 +76,15 @@ export function HomeScreen({ onStart }: Props) {
         Dumb Charades
       </h1>
 
-      <p className="text-base text-gray-500 mb-12 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-        Act it out. Guess it fast. No teams needed.
+      {/* VP-1: updated copy + better contrast */}
+      <p className="text-base text-gray-400 mb-12 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        Act it out. Guess it fast. Teams welcome.
       </p>
 
+      {/* VP-2: hover:brightness on CTA */}
       <button
         onClick={onStart}
-        className="w-full py-5 rounded-2xl text-xl font-bold text-white animate-slide-up cursor-pointer transition-all active:scale-95"
+        className="w-full py-5 rounded-2xl text-xl font-bold text-white animate-slide-up cursor-pointer transition-all active:scale-95 hover:brightness-110"
         style={{
           background: 'linear-gradient(135deg, #ff3c6f, #7c3aed)',
           animationDelay: '0.2s',
@@ -108,6 +94,20 @@ export function HomeScreen({ onStart }: Props) {
       >
         Start Game
       </button>
+
+      {/* IE-5: Resume game if a game is in progress */}
+      {isGameInProgress && onResume && (
+        <button
+          onClick={onResume}
+          className="w-full mt-3 py-4 rounded-2xl text-base font-bold text-gray-300 border border-[#2a2a3e] animate-slide-up cursor-pointer transition-all active:scale-95 hover:border-gray-500 hover:text-white"
+          style={{
+            animationDelay: '0.25s',
+            background: 'rgba(255,255,255,0.03)',
+          }}
+        >
+          Resume Game · Round {resumeRound}
+        </button>
+      )}
 
       <p className="mt-10 text-xs text-gray-700 animate-slide-up" style={{ animationDelay: '0.3s' }}>
         works offline · no signup · free forever

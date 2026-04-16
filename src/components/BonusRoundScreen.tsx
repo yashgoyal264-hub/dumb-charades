@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { GameState, GameAction } from '../types';
 
 interface Props {
@@ -8,24 +8,41 @@ interface Props {
 
 const COUNTDOWN = 10;
 
+function vibrate(pattern: number | number[]) {
+  try { navigator.vibrate(pattern); } catch (_) {}
+}
+
 export function BonusRoundScreen({ state, dispatch }: Props) {
   const [timeLeft, setTimeLeft] = useState(COUNTDOWN);
+  // P0-5: guard against race condition when Accept is tapped at last second
+  const acceptedRef = useRef(false);
+
   const value = state.pendingBonusRound?.value ?? 0;
   const actor = state.players[state.currentActorIndex];
+  const isUrgent = timeLeft <= 3;
 
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          dispatch({ type: 'DECLINE_BONUS' });
+          // Only auto-decline if Accept hasn't already fired
+          if (!acceptedRef.current) dispatch({ type: 'DECLINE_BONUS' });
           return 0;
         }
+        // IE-3: haptic tick in last 3 seconds
+        if (prev <= 4) vibrate(30);
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
   }, [dispatch]);
+
+  const handleAccept = () => {
+    // P0-5: mark accepted before dispatching so interval guard fires correctly
+    acceptedRef.current = true;
+    dispatch({ type: 'ACCEPT_BONUS' });
+  };
 
   const progress = (timeLeft / COUNTDOWN) * 100;
 
@@ -52,19 +69,13 @@ export function BonusRoundScreen({ state, dispatch }: Props) {
             {value}
             <span className="text-4xl text-gray-500 ml-2">pts</span>
           </h1>
-          <p className="text-gray-500 text-sm mt-3">if your team guesses it</p>
+          <p className="text-gray-500 text-sm mt-3">
+            {state.isTeamMode ? 'if your team guesses it' : 'if someone guesses it'}
+          </p>
         </div>
 
-        {/* Risk / reward */}
+        {/* VP-6: penalty (−N) first so reward (+N) lands last in reading order */}
         <div className="w-full grid grid-cols-2 gap-3 animate-slide-up">
-          <div className="p-4 rounded-2xl text-center"
-            style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-            <p className="text-2xl font-black text-green-400"
-              style={{ fontFamily: 'Space Mono, monospace' }}>
-              +{value}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">if guessed</p>
-          </div>
           <div className="p-4 rounded-2xl text-center"
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <p className="text-2xl font-black text-red-400"
@@ -73,28 +84,36 @@ export function BonusRoundScreen({ state, dispatch }: Props) {
             </p>
             <p className="text-xs text-gray-500 mt-1">if time runs out</p>
           </div>
+          <div className="p-4 rounded-2xl text-center"
+            style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+            <p className="text-2xl font-black text-green-400"
+              style={{ fontFamily: 'Space Mono, monospace' }}>
+              +{value}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">if guessed</p>
+          </div>
         </div>
 
         <p className="text-gray-600 text-xs">Foul = neutral &nbsp;·&nbsp; Guesser gets standard +1</p>
       </div>
 
-      {/* Auto-skip countdown */}
+      {/* IE-3: pulse the countdown bar in last 3s */}
       <div className="w-full mb-4">
         <div className="flex justify-between text-xs text-gray-600 mb-2">
           <span>Auto-skip in</span>
           <span className="font-bold"
             style={{
-              color: timeLeft <= 2 ? '#ef4444' : '#fbbf24',
+              color: isUrgent ? '#ef4444' : '#fbbf24',
               fontFamily: 'Space Mono, monospace',
             }}>
             {timeLeft}s
           </span>
         </div>
-        <div className="w-full h-1.5 bg-[#1a1a2e] rounded-full overflow-hidden">
+        <div className={`w-full h-2 bg-[#1a1a2e] rounded-full overflow-hidden ${isUrgent ? 'animate-pulse-urgent' : ''}`}>
           <div className="h-full rounded-full transition-all duration-1000"
             style={{
               width: `${progress}%`,
-              background: timeLeft <= 2 ? '#ef4444' : '#fbbf24',
+              background: isUrgent ? '#ef4444' : '#fbbf24',
             }} />
         </div>
       </div>
@@ -102,7 +121,7 @@ export function BonusRoundScreen({ state, dispatch }: Props) {
       {/* Actions */}
       <div className="w-full flex flex-col gap-3">
         <button
-          onClick={() => dispatch({ type: 'ACCEPT_BONUS' })}
+          onClick={handleAccept}
           className="w-full py-5 rounded-2xl text-xl font-black text-white transition-all active:scale-95 cursor-pointer"
           style={{
             background: 'linear-gradient(135deg, #ff3c6f, #7c3aed)',

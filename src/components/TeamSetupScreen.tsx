@@ -54,9 +54,11 @@ export function TeamSetupScreen({ state, dispatch }: Props) {
 
   return (
     <div className="flex flex-col min-h-dvh px-5 py-8 screen-enter overflow-y-auto">
+      {/* VP-9: standardized back button */}
       <button
         onClick={() => dispatch({ type: 'GO_TO_SCREEN', screen: 'setup' })}
-        className="text-gray-500 text-left mb-6 text-sm cursor-pointer hover:text-gray-300 transition-colors w-fit"
+        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-gray-400 text-sm font-bold cursor-pointer hover:text-white transition-colors mb-6 w-fit"
+        style={{ background: 'rgba(255,255,255,0.05)' }}
       >
         ← Back
       </button>
@@ -132,13 +134,14 @@ export function TeamSetupScreen({ state, dispatch }: Props) {
               <div className="flex gap-2">
                 {teams.map((team, i) => {
                   const active = assignment[player] === i;
+                  // P1-8: always show team color even when inactive
                   return (
                     <button key={team.name} onClick={() => assign(player, i)}
                       className="px-3 py-1 rounded-lg text-xs font-black transition-all active:scale-95 cursor-pointer"
                       style={{
-                        background: active ? `${TEAM_COLORS[i]}25` : 'rgba(255,255,255,0.06)',
-                        border: `1.5px solid ${active ? TEAM_COLORS[i] : '#2a2a3e'}`,
-                        color: active ? TEAM_COLORS[i] : '#6b7280',
+                        background: active ? `${TEAM_COLORS[i]}25` : `${TEAM_COLORS[i]}0d`,
+                        border: `1.5px solid ${active ? TEAM_COLORS[i] : TEAM_COLORS[i] + '40'}`,
+                        color: active ? TEAM_COLORS[i] : TEAM_COLORS[i] + '80',
                       }}>
                       T{i + 1}
                     </button>

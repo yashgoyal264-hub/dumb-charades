@@ -43,6 +43,8 @@ export async function createSession(state: GameState): Promise<string | null> {
     mode: state.mode,
     timer_seconds: state.duration,
     house_rules: state.houseRules,
+    is_team_mode: state.isTeamMode,
+    teams: state.isTeamMode ? state.teams : null,
   });
 }
 
@@ -62,6 +64,7 @@ export function logRound(sessionId: string, state: GameState): void {
     bonus_round: state.bonusRoundAccepted,
     bonus_value: state.bonusRoundAccepted ? state.bonusRoundValue : null,
     round_duration_ms: durationMs,
+    team_name: state.isTeamMode ? (state.teams[state.currentTeamIndex]?.name ?? null) : null,
   });
 }
 
@@ -69,7 +72,7 @@ export function closeSession(sessionId: string, state: GameState): void {
   dbUpdate('sessions', sessionId, {
     ended_at: new Date().toISOString(),
     total_rounds: state.round,
-    final_scores: state.scores,
+    final_scores: state.isTeamMode ? state.teamScores : state.scores,
     winner: state.suddenDeathWinner,
     ended_by: state.suddenDeathWinner ? 'sudden_death' : 'end_game',
   });

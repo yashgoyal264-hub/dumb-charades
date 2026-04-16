@@ -15,7 +15,8 @@ export function Timer({ timeLeft, duration, color, isUrgent }: Props) {
 
   return (
     <div className={`relative flex items-center justify-center ${isUrgent ? 'animate-pulse-urgent' : ''}`}>
-      <svg width={size} height={size}>
+      <svg width={size} height={size}
+        style={isUrgent ? { filter: 'drop-shadow(0 0 14px rgba(239,68,68,0.55))' } : undefined}>
         {/* Background ring */}
         <circle
           cx={size / 2}

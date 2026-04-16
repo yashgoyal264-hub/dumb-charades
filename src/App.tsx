@@ -37,10 +37,14 @@ function App() {
 
   // Wrapped dispatch: fires Supabase side-effects before/after key actions
   const wrappedDispatch = useCallback((action: GameAction) => {
-    if (action.type === 'START_GAME') {
+    if (action.type === 'START_GAME' || action.type === 'START_TEAM_GAME') {
       lastLoggedRound.current = 0;
       dispatch(action);
-      createSession(state).then(sessionId => {
+      // Build the state that will exist after this action so createSession sees teams
+      const nextState = action.type === 'START_TEAM_GAME'
+        ? { ...state, isTeamMode: true, teams: action.teams }
+        : state;
+      createSession(nextState).then(sessionId => {
         if (sessionId) dispatch({ type: 'SET_SESSION_ID', sessionId });
       });
       return;
@@ -76,11 +80,18 @@ function App() {
     }
   };
 
+  const isGameInProgress = state.players.length > 0 && state.round > 1;
+
   return (
     <div className="min-h-dvh bg-[#0a0a0f] flex flex-col items-center justify-start">
       <div className="w-full max-w-[450px] min-h-dvh flex flex-col">
         {state.screen === 'home' && (
-          <HomeScreen onStart={() => wrappedDispatch({ type: 'GO_TO_SCREEN', screen: 'setup' })} />
+          <HomeScreen
+            onStart={() => wrappedDispatch({ type: 'GO_TO_SCREEN', screen: 'setup' })}
+            isGameInProgress={isGameInProgress}
+            resumeRound={state.round}
+            onResume={() => wrappedDispatch({ type: 'GO_TO_SCREEN', screen: 'pass' })}
+          />
         )}
         {state.screen === 'setup' && (
           <SetupScreen state={state} dispatch={wrappedDispatch} />

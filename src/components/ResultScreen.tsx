@@ -7,33 +7,39 @@ interface Props {
   dispatch: React.Dispatch<GameAction>;
 }
 
+function vibrate(pattern: number | number[]) {
+  try { navigator.vibrate(pattern); } catch (_) {}
+}
+
 export function ResultScreen({ state, dispatch }: Props) {
   const { lastResult, lastGuesser, lastSplitGuessers, currentMovie, lastActorPoints,
     lastGuesserPoints, lastQuickGuessBonus, bonusRoundAccepted, bonusRoundValue, suddenDeathWinner } = state;
 
-  // Format a list of names: ["A","B","C"] → "A, B & C"
   const formatNames = (names: string[]) => {
     if (names.length <= 1) return names[0] ?? '';
     return names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1];
   };
-  const actor = state.players[state.currentActorIndex];
+  const actor    = state.players[state.currentActorIndex];
   const teamName = state.isTeamMode ? state.teams[state.currentTeamIndex]?.name : null;
 
   const { playBuzzer } = useSound();
 
   // Overtime state — only active on timeout result
   const [overtimeElapsed, setOvertimeElapsed] = useState(0);
-  const [flashOn, setFlashOn] = useState(false);
+  const [flashOn,    setFlashOn]    = useState(false);
   const [flashPhase, setFlashPhase] = useState<'rapid' | 'steady' | 'none'>('none');
   const overtimeRef = useRef(0);
+
+  // P1-6: lock Next Round button for 3s on timeout to prevent reflex taps
+  const [nextRoundLocked, setNextRoundLocked] = useState(lastResult === 'timeout');
 
   useEffect(() => {
     if (lastResult !== 'timeout') return;
 
     playBuzzer();
+    vibrate([200, 100, 200, 100, 200]); // IE-1: timeout haptic
     setFlashPhase('rapid');
 
-    // Rapid flash: toggle every 180ms for 2.4s (~13 flashes)
     let flashState = false;
     const flashInterval = setInterval(() => {
       flashState = !flashState;
@@ -46,16 +52,19 @@ export function ResultScreen({ state, dispatch }: Props) {
       setFlashPhase('steady');
     }, 2400);
 
-    // Overtime counter: starts immediately, counts up every second
     const overtimeInterval = setInterval(() => {
       overtimeRef.current += 1;
       setOvertimeElapsed(overtimeRef.current);
     }, 1000);
 
+    // P1-6: unlock Next Round after 3s
+    const unlockTimeout = setTimeout(() => setNextRoundLocked(false), 3000);
+
     return () => {
       clearInterval(flashInterval);
       clearTimeout(flashTimeout);
       clearInterval(overtimeInterval);
+      clearTimeout(unlockTimeout);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -64,12 +73,8 @@ export function ResultScreen({ state, dispatch }: Props) {
 
   const bgStyle = (() => {
     if (lastResult !== 'timeout') return {};
-    if (flashPhase === 'rapid') {
-      return { background: flashOn ? 'rgba(239,68,68,0.22)' : '#0a0a0f' };
-    }
-    if (flashPhase === 'steady') {
-      return { background: 'rgba(239,68,68,0.09)' };
-    }
+    if (flashPhase === 'rapid')  return { background: flashOn ? 'rgba(239,68,68,0.22)' : '#0a0a0f' };
+    if (flashPhase === 'steady') return { background: 'rgba(239,68,68,0.09)' };
     return {};
   })();
 
@@ -103,10 +108,12 @@ export function ResultScreen({ state, dispatch }: Props) {
     );
   }
 
-  const scoreDisplay = teamName ? `${teamName} +${lastActorPoints}` : `${lastGuesser} +${lastGuesserPoints}  ·  ${actor} +${lastActorPoints}`;
+  const scoreDisplay = teamName
+    ? `${teamName} +${lastActorPoints}`
+    : `${lastGuesser} +${lastGuesserPoints}  ·  ${actor} +${lastActorPoints}`;
   const timeoutDisplay = teamName
     ? (bonusRoundAccepted ? `${teamName} −${bonusRoundValue} pts` : state.houseRules.timeoutPenalty ? `${teamName} −1 pt (house rule)` : 'No points this round')
-    : (bonusRoundAccepted ? `${actor} −${bonusRoundValue} pts` : state.houseRules.timeoutPenalty ? `${actor} −1 pt (house rule)` : 'No points this round');
+    : (bonusRoundAccepted ? `${actor} −${bonusRoundValue} pts`   : state.houseRules.timeoutPenalty ? `${actor} −1 pt (house rule)`   : 'No points this round');
 
   const config = {
     guessed: {
@@ -119,7 +126,7 @@ export function ResultScreen({ state, dispatch }: Props) {
     },
     split: {
       emoji: '⚡',
-      title: `Split guess!`,
+      title: 'Split guess!',
       subtitle: `${formatNames(lastSplitGuessers)} +${lastGuesserPoints} each  ·  ${actor} +${lastActorPoints}`,
       color: '#fbbf24',
       bg: 'rgba(251,191,36,0.1)',
@@ -127,7 +134,7 @@ export function ResultScreen({ state, dispatch }: Props) {
     },
     timeout: {
       emoji: bonusRoundAccepted ? '💸' : '⏰',
-      title: bonusRoundAccepted ? `Bonus lost!` : `Time's Up!`,
+      title: bonusRoundAccepted ? 'Bonus lost!' : "Time's Up!",
       subtitle: timeoutDisplay,
       color: '#ef4444',
       bg: 'rgba(239,68,68,0.1)',
@@ -157,16 +164,21 @@ export function ResultScreen({ state, dispatch }: Props) {
           <div className="w-full rounded-2xl p-4 animate-fade-in-scale"
             style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)' }}>
             <p className="text-xs uppercase tracking-widest text-red-400 mb-1">Still ticking</p>
-            <p
-              className="text-5xl font-black text-red-400"
-              style={{ fontFamily: 'Space Mono, monospace' }}
-            >
+            <p className="text-5xl font-black text-red-400" style={{ fontFamily: 'Space Mono, monospace' }}>
               {overtimeTotal}s
             </p>
           </div>
         )}
 
         <div className="animate-bounce-in text-7xl mb-2">{c.emoji}</div>
+
+        {/* VP-8: "The answer was" card moved up — right after emoji */}
+        <div className="w-full rounded-xl p-4 animate-slide-up" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <p className="text-gray-500 text-xs uppercase tracking-widest mb-1">The answer was</p>
+          <p className="text-white text-2xl font-black" style={{ fontFamily: 'Outfit, system-ui, sans-serif' }}>
+            {currentMovie}
+          </p>
+        </div>
 
         {/* Main result card */}
         <div
@@ -201,6 +213,14 @@ export function ResultScreen({ state, dispatch }: Props) {
               ⚡ Quick guess! +1 bonus each
             </div>
           )}
+          {lastQuickGuessBonus && lastResult === 'split' && (
+            <div
+              className="px-3 py-1.5 rounded-full text-xs font-black animate-slide-up"
+              style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}
+            >
+              ⚡ Quick guess! +0.5 bonus each
+            </div>
+          )}
           {bonusRoundAccepted && lastResult === 'guessed' && (
             <div
               className="px-3 py-1.5 rounded-full text-xs font-black animate-slide-up"
@@ -210,34 +230,31 @@ export function ResultScreen({ state, dispatch }: Props) {
             </div>
           )}
         </div>
-
-        {/* Movie name */}
-        <div className="w-full rounded-xl p-4 animate-slide-up" style={{ background: 'rgba(255,255,255,0.04)' }}>
-          <p className="text-gray-500 text-xs uppercase tracking-widest mb-1">The answer was</p>
-          <p
-            className="text-white text-2xl font-black"
-            style={{ fontFamily: 'Outfit, system-ui, sans-serif' }}
-          >
-            {currentMovie}
-          </p>
-        </div>
       </div>
 
       {/* Actions */}
       <div className="w-full flex flex-col gap-3">
+        {/* P1-6: Next Round locked for 3s on timeout to prevent reflex taps */}
         <button
-          onClick={() => dispatch({
-            type: 'NEXT_ROUND',
-            overtimeDuration: lastResult === 'timeout' ? overtimeTotal : undefined,
-          })}
-          className="w-full py-5 rounded-2xl text-xl font-black text-white transition-all active:scale-95 cursor-pointer"
+          onClick={() => {
+            if (nextRoundLocked) return;
+            dispatch({
+              type: 'NEXT_ROUND',
+              overtimeDuration: lastResult === 'timeout' ? overtimeTotal : undefined,
+            });
+          }}
+          disabled={nextRoundLocked}
+          className="w-full py-5 rounded-2xl text-xl font-black text-white transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed"
           style={{
-            background: 'linear-gradient(135deg, #ff3c6f, #7c3aed)',
-            boxShadow: '0 0 30px rgba(255,60,111,0.2)',
+            background: nextRoundLocked
+              ? 'rgba(255,60,111,0.15)'
+              : 'linear-gradient(135deg, #ff3c6f, #7c3aed)',
+            boxShadow: nextRoundLocked ? 'none' : '0 0 30px rgba(255,60,111,0.2)',
             fontFamily: 'Outfit, system-ui, sans-serif',
+            opacity: nextRoundLocked ? 0.5 : 1,
           }}
         >
-          Next Round →
+          {nextRoundLocked ? 'Still counting…' : 'Next Round →'}
         </button>
         <button
           onClick={() => dispatch({ type: 'GO_TO_SCREEN', screen: 'scoreboard' })}
