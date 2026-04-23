@@ -22,16 +22,36 @@ function detectCategory(movie: string): string {
     ...contentData.movies.hollywood.easy, ...contentData.movies.hollywood.hard];
   const allSongs = [...contentData.songs.bollywood.easy, ...contentData.songs.bollywood.hard,
     ...contentData.songs.hollywood.easy, ...contentData.songs.hollywood.hard];
+  const allSeries = [...(contentData.series?.bollywood?.easy ?? []), ...(contentData.series?.bollywood?.hard ?? []),
+    ...(contentData.series?.hollywood?.easy ?? []), ...(contentData.series?.hollywood?.hard ?? [])];
 
   if (allMovies.includes(movie)) return 'movies';
   if (allSongs.includes(movie)) return 'songs';
-  return 'series';
+  if (allSeries.includes(movie)) return 'series';
+  return 'movies'; // P0-3: safe fallback instead of always 'series'
+}
+
+function detectRegion(movie: string): 'bollywood' | 'hollywood' | null {
+  const bollywood = [
+    ...(contentData.movies?.bollywood?.easy ?? []), ...(contentData.movies?.bollywood?.hard ?? []),
+    ...(contentData.songs?.bollywood?.easy  ?? []), ...(contentData.songs?.bollywood?.hard  ?? []),
+    ...(contentData.series?.bollywood?.easy ?? []), ...(contentData.series?.bollywood?.hard ?? []),
+  ];
+  const hollywood = [
+    ...(contentData.movies?.hollywood?.easy ?? []), ...(contentData.movies?.hollywood?.hard ?? []),
+    ...(contentData.songs?.hollywood?.easy  ?? []), ...(contentData.songs?.hollywood?.hard  ?? []),
+    ...(contentData.series?.hollywood?.easy ?? []), ...(contentData.series?.hollywood?.hard ?? []),
+  ];
+  if (bollywood.includes(movie)) return 'bollywood';
+  if (hollywood.includes(movie)) return 'hollywood';
+  return null;
 }
 
 export function RevealScreen({ state, dispatch }: Props) {
   const actor = state.players[state.currentActorIndex];
   const categoryKey   = detectCategory(state.currentMovie);
   const categoryLabel = CATEGORY_LABEL[categoryKey] ?? '🎭 Act';
+  const region        = detectRegion(state.currentMovie);
 
   // IE-8: title starts blurred — tap once to reveal permanently for this round
   const [titleRevealed, setTitleRevealed] = useState(false);
@@ -54,8 +74,21 @@ export function RevealScreen({ state, dispatch }: Props) {
 
       {/* Movie / song / series reveal */}
       <div className="flex-1 flex flex-col items-center justify-center px-2 text-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-center">
           <span className="text-xs font-bold uppercase tracking-widest text-gray-600">{categoryLabel}</span>
+          {/* P2-E7: region badge */}
+          {region === 'bollywood' && (
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24' }}>
+              🇮🇳 Bollywood
+            </span>
+          )}
+          {region === 'hollywood' && (
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa' }}>
+              🌍 Hollywood
+            </span>
+          )}
         </div>
 
         {/* IE-8: tap to reveal title; blurred until first tap */}

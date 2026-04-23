@@ -296,9 +296,10 @@ export function SetupScreen({ state, dispatch }: Props) {
         {showHouseRules && (
           <div className="mt-3 flex flex-col gap-2 animate-slide-up">
             {([
-              { key: 'noSkip'         as const, label: 'No Skips',        desc: 'Actor must act every movie'   },
-              { key: 'timeoutPenalty' as const, label: 'Timeout Penalty', desc: 'Actor loses 1 pt on timeout' },
-              { key: 'allowProps'     as const, label: 'Allow Props',     desc: 'Actor can use nearby objects' },
+              { key: 'noSkip'         as const, label: 'No Skips',       desc: 'Actor must act every movie'        },
+              { key: 'timeoutPenalty' as const, label: 'Timeout Penalty',desc: 'Actor loses 1 pt on timeout'       },
+              { key: 'foulPenalty'    as const, label: 'Foul Penalty',   desc: 'Actor loses 1 pt on foul'          },
+              { key: 'allowProps'     as const, label: 'Allow Props',    desc: 'Actor can use nearby objects'      },
             ] as const).map(rule => (
               <div key={rule.key} className="flex items-center justify-between p-3 rounded-xl"
                 style={{ background: 'rgba(255,255,255,0.03)' }}>

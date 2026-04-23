@@ -3,7 +3,7 @@ import contentData from './data/content.json';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function shuffle<T>(arr: T[]): T[] {
+export function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -106,6 +106,7 @@ export const initialState: GameState = {
   houseRules: {
     noSkip: false,
     timeoutPenalty: false,
+    foulPenalty: false,
     suddenDeath: false,
     suddenDeathTarget: 10,
     allowProps: false,
@@ -214,6 +215,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         skipsRemaining: state.skipsRemaining - 1,
         usedMovies: new Set([...state.usedMovies, movie]),
         isRecycledMovie: isRecycled,
+        // P0-4: skip after bonus accepted forfeits the bonus — can't fish for easier movie
+        bonusRoundAccepted: false,
+        bonusRoundValue: 0,
       };
     }
 
@@ -242,6 +246,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'START_ACTING':
       return { ...state, screen: 'acting', actingStartTime: action.timestamp };
 
+    // P1-E3: update actingStartTime when timer actually starts (after countdown in ActingScreen)
+    case 'SET_ACTING_START':
+      return { ...state, actingStartTime: action.timestamp };
+
     // ── Correct guess ──────────────────────────────────────────────────────
 
     case 'CORRECT_GUESS': {
@@ -254,6 +262,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const actorPts = baseActorPts + quickBonus;
 
       const historyEntry = {
+        round: state.round,
         movie: state.currentMovie, actor,
         guessedBy: action.guesser, wasFoul: false, wasSplit: false,
         bonusRound: state.bonusRoundAccepted,
@@ -324,6 +333,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         lastQuickGuessBonus: isQuickGuess,
         suddenDeathWinner,
         history: [...state.history, {
+          round: state.round,
           movie: state.currentMovie,
           actor,
           guessedBy: action.guessers[0],
@@ -345,6 +355,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         : state.houseRules.timeoutPenalty ? -1 : 0;
 
       const historyEntry = {
+        round: state.round,
         movie: state.currentMovie, actor, guessedBy: null, wasFoul: false, wasSplit: false,
         bonusRound: state.bonusRoundAccepted,
         bonusValue: state.bonusRoundAccepted ? state.bonusRoundValue : undefined,
@@ -377,16 +388,30 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'FOUL': {
       const actor = state.players[state.currentActorIndex];
+      const foulPts = state.houseRules.foulPenalty ? -1 : 0;
+      const newScores = foulPts !== 0
+        ? { ...state.scores, [actor]: (state.scores[actor] || 0) + foulPts }
+        : state.scores;
+      const newIndividual = foulPts !== 0 && state.isTeamMode
+        ? { ...state.individualActorScores, [actor]: (state.individualActorScores[actor] || 0) + foulPts }
+        : state.individualActorScores;
+      const newTeamScores = foulPts !== 0 && state.isTeamMode
+        ? { ...state.teamScores, [state.teams[state.currentTeamIndex].name]: (state.teamScores[state.teams[state.currentTeamIndex].name] || 0) + foulPts }
+        : state.teamScores;
       return {
         ...state,
         screen: 'result',
+        scores: newScores,
+        teamScores: newTeamScores,
+        individualActorScores: newIndividual,
         lastResult: 'foul',
         lastGuesser: null,
         lastSplitGuessers: [],
-        lastActorPoints: 0,
+        lastActorPoints: foulPts,
         lastQuickGuessBonus: false,
         suddenDeathWinner: null,
         history: [...state.history, {
+          round: state.round,
           movie: state.currentMovie,
           actor,
           guessedBy: null,

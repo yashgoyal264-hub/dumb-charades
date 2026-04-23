@@ -30,6 +30,8 @@ function dbUpdate(table: string, id: string, data: Record<string, unknown>): voi
     method: 'PATCH',
     headers,
     body: JSON.stringify(data),
+    // P0-6: keepalive ensures the request completes even if tab is closed immediately after
+    keepalive: true,
   }).catch(() => { /* silent — logging failure must never break gameplay */ });
 }
 

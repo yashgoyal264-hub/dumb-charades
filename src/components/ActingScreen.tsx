@@ -53,7 +53,12 @@ export function ActingScreen({ state, dispatch }: Props) {
     setCountdownText('3');
     const t1 = setTimeout(() => setCountdownText('2'),  900);
     const t2 = setTimeout(() => setCountdownText('1'),  1800);
-    const t3 = setTimeout(() => { setCountdownText('GO!'); start(); }, 2700);
+    const t3 = setTimeout(() => {
+      setCountdownText('GO!');
+      // P1-E3: record the actual moment acting starts (after countdown) for accurate elapsed time
+      dispatch({ type: 'SET_ACTING_START', timestamp: Date.now() });
+      start();
+    }, 2700);
     const t4 = setTimeout(() => setCountdownDone(true), 3100);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   // eslint-disable-next-line react-hooks/exhaustive-deps

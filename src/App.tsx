@@ -55,6 +55,18 @@ function App() {
     dispatch(action);
   }, [state]) as React.Dispatch<GameAction>;
 
+  // P0-6: close session when tab is hidden/PWA is killed
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && state.sessionId) {
+        closeSession(state.sessionId, state);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.sessionId, state.round, state.scores, state.teamScores, state.suddenDeathWinner]);
+
   // Log each completed round when the result screen appears
   useEffect(() => {
     if (

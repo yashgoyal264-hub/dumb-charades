@@ -12,12 +12,14 @@ export interface Team {
 export interface HouseRules {
   noSkip: boolean;
   timeoutPenalty: boolean;
+  foulPenalty: boolean;
   suddenDeath: boolean;
   suddenDeathTarget: number;
   allowProps: boolean;
 }
 
 export interface HistoryEntry {
+  round: number;
   movie: string;
   actor: string;
   guessedBy: string | null;
@@ -85,6 +87,7 @@ export type GameAction =
   | { type: 'START_GAME' }
   | { type: 'SKIP_MOVIE' }
   | { type: 'START_ACTING'; timestamp: number }
+  | { type: 'SET_ACTING_START'; timestamp: number }
   | { type: 'ACCEPT_BONUS' }
   | { type: 'DECLINE_BONUS' }
   | { type: 'CORRECT_GUESS'; guesser: string; timestamp: number }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { GameState, GameAction, Team, ActingMode } from '../types';
+import { shuffle } from '../gameReducer';
 
 interface Props {
   state: GameState;
@@ -23,7 +24,7 @@ function buildTeams(names: string[], count: number, assignment: Record<string, n
 }
 
 function randomizeAssignment(players: string[], count: number): Record<string, number> {
-  const shuffled = [...players].sort(() => Math.random() - 0.5);
+  const shuffled = shuffle([...players]); // P2-E4: use Fisher-Yates instead of biased sort
   const result: Record<string, number> = {};
   shuffled.forEach((p, i) => { result[p] = i % count; });
   return result;
@@ -49,7 +50,8 @@ export function TeamSetupScreen({ state, dispatch }: Props) {
 
   const teams = buildTeams(state.players, teamCount, assignment);
   const allAssigned = state.players.every(p => assignment[p] !== undefined);
-  const allTeamsHaveMembers = teams.every(t => t.members.length > 0);
+  // P1-1: require ≥2 members per team so guesser list is never empty
+  const allTeamsHaveMembers = teams.every(t => t.members.length >= 2);
   const canStart = allAssigned && allTeamsHaveMembers;
 
   return (

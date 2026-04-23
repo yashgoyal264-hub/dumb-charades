@@ -13,7 +13,8 @@ function vibrate(pattern: number | number[]) {
 }
 
 export function BonusRoundScreen({ state, dispatch }: Props) {
-  const [timeLeft, setTimeLeft] = useState(COUNTDOWN);
+  const [timeLeft, setTimeLeft]       = useState(COUNTDOWN);
+  const [autoDeclined, setAutoDeclined] = useState(false);
   // P0-5: guard against race condition when Accept is tapped at last second
   const acceptedRef = useRef(false);
 
@@ -26,8 +27,13 @@ export function BonusRoundScreen({ state, dispatch }: Props) {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          // Only auto-decline if Accept hasn't already fired
-          if (!acceptedRef.current) dispatch({ type: 'DECLINE_BONUS' });
+          // P1-8: show overlay for 900ms before dispatching so user sees feedback
+          if (!acceptedRef.current) {
+            setAutoDeclined(true);
+            setTimeout(() => {
+              if (!acceptedRef.current) dispatch({ type: 'DECLINE_BONUS' });
+            }, 900);
+          }
           return 0;
         }
         // IE-3: haptic tick in last 3 seconds
@@ -47,8 +53,19 @@ export function BonusRoundScreen({ state, dispatch }: Props) {
   const progress = (timeLeft / COUNTDOWN) * 100;
 
   return (
-    <div className="flex flex-col items-center justify-between min-h-dvh px-6 py-10 screen-enter"
+    <div className="flex flex-col items-center justify-between min-h-dvh px-6 py-10 screen-enter relative"
       style={{ background: 'radial-gradient(ellipse at center, rgba(255,60,111,0.07) 0%, #0a0a0f 70%)' }}>
+
+      {/* P1-8: auto-decline overlay */}
+      {autoDeclined && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-3xl"
+          style={{ background: 'rgba(10,10,15,0.88)' }}>
+          <p className="text-2xl font-black text-gray-300"
+            style={{ fontFamily: 'Outfit, system-ui, sans-serif' }}>
+            ⏱ Bonus auto-skipped!
+          </p>
+        </div>
+      )}
 
       <div className="text-center">
         <p className="text-gray-500 text-sm">{actor}, this is for you</p>

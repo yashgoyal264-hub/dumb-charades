@@ -191,7 +191,16 @@ export function ScoreboardScreen({ state, dispatch }: Props) {
                 style={{ background: 'rgba(255,255,255,0.03)' }}
               >
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="text-white font-bold">{entry.movie}</span>
+                  <div className="flex items-baseline gap-1.5 min-w-0">
+                    {/* P2-E1: round number prefix */}
+                    {entry.round != null && (
+                      <span className="text-gray-600 text-xs flex-shrink-0"
+                        style={{ fontFamily: 'Space Mono, monospace' }}>
+                        R{entry.round}
+                      </span>
+                    )}
+                    <span className="text-white font-bold truncate">{entry.movie}</span>
+                  </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
                     entry.wasFoul  ? 'bg-red-900/40 text-red-400'   :
                     entry.guessedBy ? 'bg-green-900/40 text-green-400' :
